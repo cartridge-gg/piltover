@@ -5,9 +5,7 @@ use piltover::appchain::appchain::{Event, LogStateUpdate, LogStateTransitionFact
 use piltover::config::{IConfig, IConfigDispatcherTrait, IConfigDispatcher};
 use piltover::interface::{IAppchain, IAppchainDispatcherTrait, IAppchainDispatcher};
 use piltover::messaging::{IMessaging, IMessagingDispatcherTrait, IMessagingDispatcher};
-use piltover::mocks::{
-    fact_registry_mock, IFactRegistryMockDispatcher, IFactRegistryMockDispatcherTrait
-}; // To change when Herodotus finishes implementing FactRegistry.
+use piltover::fact_registry::{IFactRegistryDispatcher, IFactRegistryDispatcherTrait};
 use piltover::snos_output::ProgramOutput;
 use snforge_std as snf;
 use snforge_std::{
@@ -40,10 +38,10 @@ fn deploy_with_owner_and_state(
 }
 
 /// Deploys the fact registry mock contract.
-fn deploy_fact_registry_mock() -> IFactRegistryMockDispatcher {
+fn deploy_fact_registry_mock() -> IFactRegistryDispatcher {
     let contract = snf::declare("fact_registry_mock");
     let contract_address = contract.deploy(@array![]).unwrap();
-    IFactRegistryMockDispatcher { contract_address }
+    IFactRegistryDispatcher { contract_address }
 }
 
 /// State update taken from mainnet:
@@ -191,7 +189,7 @@ fn update_state_ok() {
     // and the message to appchain as sealed.
     let output = get_state_update();
     let onchain_data_hash = 0x0;
-    let onchain_data_size: u256 = 0;
+    let onchain_data_size = 0;
     snf::start_prank(CheatTarget::One(appchain.contract_address), c::OWNER());
     appchain.update_state(output, onchain_data_hash, onchain_data_size);
 

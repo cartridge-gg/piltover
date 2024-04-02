@@ -21,7 +21,6 @@ mod appchain {
         ReentrancyGuardComponent,
         ReentrancyGuardComponent::InternalTrait as InternalReentrancyGuardImpl
     };
-    use piltover::fact_registry::{IFactRegistryDispatcher, IFactRegistryDispatcherTrait};
     use piltover::components::onchain_data_fact_tree_encoder::{
         encode_fact_with_onchain_data, DataAvailabilityFact
     };
@@ -31,9 +30,7 @@ mod appchain {
         messaging_cpt, messaging_cpt::InternalTrait as MessagingInternal, IMessaging,
         output_process, output_process::{MessageToStarknet, MessageToAppchain},
     };
-    use piltover::mocks::{
-        IFactRegistryMockDispatcher, IFactRegistryMockDispatcherTrait
-    }; // To change when Herodotus finishes implementing FactRegistry.
+    use piltover::fact_registry::{IFactRegistryDispatcher, IFactRegistryDispatcherTrait};
     use piltover::snos_output::ProgramOutput;
     use piltover::snos_output;
     use piltover::state::component::state_cpt::HasComponent;
@@ -159,27 +156,12 @@ mod appchain {
                 errors::SNOS_INVALID_CONFIG_HASH
             );
 
-            // --------------------------------------
-
-            let sharp_fact: u256 = keccak::keccak_u256s_be_inputs(
-                array![current_program_hash.into(), state_transition_fact].span()
-            );
+            let output_hash = poseidon_hash_span(program_output);
+            let fact = PoseidonImpl::new().update(current_program_hash).update(output_hash).finalize();
             assert(
-                IFactRegistryMockDispatcher { contract_address: self.config.get_facts_registry() }
-                    .is_valid(sharp_fact),
+                IFactRegistryDispatcher { contract_address: self.config.get_facts_registry() }.is_valid(fact),
                 errors::NO_STATE_TRANSITION_PROOF
             );
-
-            // --------------------------------------
-
-            // let output_hash = poseidon_hash_span(program_output);
-            // let fact = PoseidonImpl::new().update(current_program_hash).update(output_hash).finalize();
-            // assert(
-            //     IFactRegistryDispatcher { contract_address: self.config.get_facts_registry() }.is_valid(fact),
-            //     errors::NO_STATE_TRANSITION_PROOF
-            // );
-
-            // --------------------------------------
 
             self.emit(LogStateTransitionFact { state_transition_fact });
 
