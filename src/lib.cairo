@@ -1,4 +1,5 @@
 mod appchain;
+mod fact_registry;
 mod interface;
 mod mocks;
 mod snos_output;

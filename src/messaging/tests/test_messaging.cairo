@@ -17,7 +17,7 @@ use starknet::{ContractAddress, storage::StorageMemberAccessTrait};
 
 /// Deploys the mock with a specific cancellation delay.
 fn deploy_mock_with_delay(cancellation_delay_secs: u64) -> (IMessagingDispatcher, EventSpy) {
-    let contract = snf::declare('messaging_mock');
+    let contract = snf::declare("messaging_mock");
     let calldata = array![cancellation_delay_secs.into()];
     let contract_address = contract.deploy(@calldata).unwrap();
 

@@ -2,19 +2,25 @@
 version = 1
 
 [[package]]
+name = "cairo_verifier"
+version = "0.1.0"
+source = "git+https://github.com/cartridge-gg/cairo-verifier#a0ea77e7fc51e40dc25748b419b82dc9a04ec60e"
+
+[[package]]
 name = "openzeppelin"
-version = "0.9.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.9.0#861fc416f87addbe23a3b47f9d19ab27c10d5dc8"
+version = "0.10.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.10.0#d77082732daab2690ba50742ea41080eb23299d3"
 
 [[package]]
 name = "piltover"
 version = "0.1.0"
 dependencies = [
+ "cairo_verifier",
  "openzeppelin",
  "snforge_std",
 ]
 
 [[package]]
 name = "snforge_std"
-version = "0.16.0"
-source = "git+https://github.com/foundry-rs/starknet-foundry?tag=v0.16.0#f58e0ab42b6095b7d0cb841ede595aecbc9cb45d"
+version = "0.20.1"
+source = "git+https://github.com/foundry-rs/starknet-foundry?tag=v0.20.1#fea2db8f2b20148cc15ee34b08de12028eb42942"

@@ -8,7 +8,7 @@ use snforge_std::{CheatTarget, ContractClassTrait};
 use starknet::ContractAddress;
 
 fn deploy_mock() -> IConfigDispatcher {
-    let contract = snf::declare('config_mock');
+    let contract = snf::declare("config_mock");
     let calldata = array![c::OWNER().into()];
     let contract_address = contract.deploy(@calldata).unwrap();
     IConfigDispatcher { contract_address }
