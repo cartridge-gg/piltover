@@ -132,7 +132,7 @@ mod appchain {
 
             // Header size + 2 messages segments len.
             assert(
-                program_output.len() > snos_output::HEADER_SIZE + 2,
+                program_output.len() >= snos_output::HEADER_SIZE + 2,
                 errors::SNOS_INVALID_PROGRAM_OUTPUT_SIZE
             );
 

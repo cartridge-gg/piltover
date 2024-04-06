@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+sncast \
+    --url http://localhost:4321 \
+    --account starknet-devnet-0 \
+    --wait \
+    invoke \
+    --contract-address 0x5c2b7242ae49163c0f648e78d5bd56f4c2dc2fab5cb3994602bd5ca90856726 \
+    --function update_state \
+    --calldata \
+    7 0 1249930490327094002782625297679352688336075947803765872716556470563901231751 1 2206949354934705176858563009008081018392139169529736771355301318806582891968 0 0 0 \
+    0 0 0
