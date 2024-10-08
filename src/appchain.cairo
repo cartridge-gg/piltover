@@ -76,8 +76,6 @@ mod appchain {
         reentrancy_guard: ReentrancyGuardComponent::Storage,
         #[substorage(v0)]
         state: state_cpt::Storage,
-        messages_to_appchain: Array<felt252>,
-        messages_to_starknet: Array<felt252>,
     }
 
     #[event]
