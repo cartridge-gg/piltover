@@ -119,7 +119,7 @@ mod appchain {
         ref self: ContractState,
         owner: ContractAddress,
         state_root: felt252,
-        block_number: felt252,
+        block_number: i128,
         block_hash: felt252,
     ) {
         self.ownable.initializer(owner);
@@ -153,7 +153,7 @@ mod appchain {
             let mut snos_output_iter = snos_output.into_iter();
             let program_output_struct = deserialize_os_output(
                 ref snos_output_iter
-            ); //Custom deserialization function, inspired by 
+            ); //Custom deserialization function, inspired by
             //https://github.com/starkware-libs/cairo-lang/blob/8e11b8cc65ae1d0959328b1b4a40b92df8b58595/src/starkware/starknet/core/aggregator/output_parser.py
 
             let (current_program_hash, current_config_hash): (felt252, felt252) = self
@@ -198,7 +198,7 @@ mod appchain {
                 .emit(
                     LogStateUpdate {
                         state_root: self.state.state_root.read(),
-                        block_number: self.state.block_number.read(),
+                        block_number: self.state.block_number.read().into(),
                         block_hash: self.state.block_hash.read(),
                     }
                 );

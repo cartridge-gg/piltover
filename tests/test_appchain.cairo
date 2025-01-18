@@ -184,6 +184,34 @@ fn appchain_owner_only() {
 }
 
 #[test]
+#[should_panic(expected: ('State: invalid block number',))]
+fn update_state_invalid_block_number() {
+    let (appchain, _spy) = deploy_with_owner_and_state(
+        owner: c::OWNER().into(),
+        state_root: 1120029756675208924496185249815549700817638276364867982519015153297469423111,
+        block_number: 98000, // Set block number equal to new block number in state update
+        block_hash: 0
+    );
+
+    let iconfig = IConfigDispatcher { contract_address: appchain.contract_address };
+    let fact_registry_mock = deploy_fact_registry_mock();
+
+    snf::start_cheat_caller_address(appchain.contract_address, c::OWNER());
+    iconfig
+        .set_program_info(
+            program_hash: 0,
+            config_hash: 8868593919264901768958912247765226517850727970326290266005120699201631282
+        );
+    iconfig.set_facts_registry(address: fact_registry_mock.contract_address);
+
+    let snos_output = get_state_update();
+    let output = get_output();
+    let onchain_data_hash = 0x0;
+    let onchain_data_size: u256 = 0;
+    appchain.update_state(snos_output, output, onchain_data_hash, onchain_data_size);
+}
+
+#[test]
 fn update_state_ok() {
     let (appchain, mut _spy) = deploy_with_owner_and_state(
         owner: c::OWNER().into(),

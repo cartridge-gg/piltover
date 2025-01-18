@@ -18,5 +18,5 @@ trait IState<T> {
     /// # Returns
     ///
     /// The state root, the block number and the block hash.
-    fn get_state(self: @T) -> (felt252, felt252, felt252);
+    fn get_state(self: @T) -> (felt252, i128, felt252);
 }
