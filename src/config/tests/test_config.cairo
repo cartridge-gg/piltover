@@ -141,3 +141,5 @@ fn config_set_facts_registry_unauthorized() {
     snf::start_cheat_caller_address(mock.contract_address, c::OTHER());
     mock.set_facts_registry(facts_registry_address);
 }
+//TODO(chudas): Add tests for setting up snos_program_hash
+
