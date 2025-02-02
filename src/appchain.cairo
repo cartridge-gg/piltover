@@ -100,7 +100,7 @@ mod appchain {
     #[derive(Drop, starknet::Event)]
     struct LogStateUpdate {
         state_root: felt252,
-        block_number: felt252,
+        block_number: i128,
         block_hash: felt252,
     }
 
@@ -198,7 +198,7 @@ mod appchain {
                 .emit(
                     LogStateUpdate {
                         state_root: self.state.state_root.read(),
-                        block_number: self.state.block_number.read().into(),
+                        block_number: self.state.block_number.read(),
                         block_hash: self.state.block_hash.read(),
                     }
                 );

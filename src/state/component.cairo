@@ -42,7 +42,8 @@ mod state_cpt {
 
             // Check the blockNumber first as the error is less ambiguous then
             // INVALID_PREVIOUS_ROOT.
-            let new_block_number: i128 = program_output.new_block_number.try_into().unwrap();
+            println!("new block number {}", program_output.new_block_number);
+            let new_block_number: i128 = program_output.new_block_number.try_into().expect('must fit in i128');
             assert(new_block_number > self.block_number.read(), errors::INVALID_BLOCK_NUMBER);
             self.block_number.write(new_block_number);
 
@@ -76,6 +77,7 @@ mod state_cpt {
             block_number: BlockNumber,
             block_hash: BlockHash,
         ) {
+            println!("initiailize with block number {}", block_number);
             self.state_root.write(state_root);
             self.block_number.write(block_number);
             self.block_hash.write(block_hash);
