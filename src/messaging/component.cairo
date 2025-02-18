@@ -207,7 +207,7 @@ pub mod messaging_cpt {
             from_address: ContractAddress,
             payload: Span<felt252>,
         ) -> MessageHash {
-            let to_address = starknet::get_caller_address();
+            let to_address = 'MSG'.try_into().unwrap();
 
             let message_hash = hash::compute_message_hash_appc_to_sn(
                 from_address, to_address, payload,
