@@ -18,5 +18,5 @@ pub trait IAppchain<T> {
     ///
     /// * `snos_output` - The StarknetOS state update output (bootloaded).
     /// * `layout_bridge_program_output` - The layout bridge proof output (bootloaded).
-    fn update_state(ref self: T, snos_output: Span<felt252>, layout_bridge_output: Span<felt252>);
+    fn update_state(ref self: T, layout_bridge_output: Span<felt252>);
 }

@@ -1,5 +1,5 @@
-use core::iter::IntoIterator;
-use core::poseidon::{PoseidonImpl, poseidon_hash_span};
+use core::iter::{Extend, IntoIterator};
+use core::poseidon::{PoseidonImpl};
 use core::result::ResultTrait;
 use openzeppelin::access::ownable::interface::{
     IOwnableTwoStepDispatcher, IOwnableTwoStepDispatcherTrait,
@@ -60,13 +60,13 @@ fn deploy_fact_registry_mock() -> IFactRegistryDispatcher {
 /// <https://etherscan.io/tx/0xc1351dac330d1d66f98efc99d08d360c2e9bc3d772c09d228027fcded8f02458>.
 /// The output has some extra value to bootload the SNOS output.
 fn get_state_update() -> Array<felt252> {
-    let felts = array![
-        1, 2, 'snos_hash',
+    let mut felts = array![
         1120029756675208924496185249815549700817638276364867982519015153297469423111,
         2251620073307221877548100532273969460343974267802546890497101472079704728659, 97999, 98000,
         531367489267323329537005801734709408229779133529698992357325410316912085961,
         1409866304326047723545512049056686384378458135319101511279962897250423318202, 0,
-        8868593919264901768958912247765226517850727970326290266005120699201631282, 0, // Voluntary modified to 0, since piltover doesn't support full output.
+        8868593919264901768958912247765226517850727970326290266005120699201631282,
+        0, // Voluntary modified to 0, since piltover doesn't support full output.
         // And on Ethereum, if it is not full output, it is KZG, which is not supported yet.
         0, 7,
         3256441166037631918262930812410838598500200462657642943867372734773841898370,
@@ -107,13 +107,15 @@ fn get_state_update() -> Array<felt252> {
 }
 
 fn get_output() -> Span<felt252> {
-    let snos_output = get_state_update();
-    let snos_output_hash = poseidon_hash_span(snos_output.span());
+    let state_update = get_state_update();
     // The output here represents the output of the Layout Bridge program,
     // which is bootloaded.
     // In the output of the bootloaded layout bridge program, the 5th element
     // is the hash of the SNOS output.
-    let felts = array![1, 2, 'layout_bridge_hash', 'bootloader_hash', snos_output_hash];
+    let mut felts = array![
+        0, 0, 'layout_bridge_hash', 'bootloader_hash', 0,0,0,'snos_hash', // Layout bridge header
+    ];
+    felts.extend(state_update);
     felts.span()
 }
 
@@ -253,10 +255,9 @@ fn update_state_ok() {
     imsg.send_message_to_appchain(contract_appc, selector_appc, payload_sn_to_appc);
     // Updating the state will register the message to starknet ready to be consumed
     // and the message to appchain as sealed.
-    let snos_output = get_state_update();
     let output = get_output();
     snf::start_cheat_caller_address(appchain.contract_address, c::OWNER);
-    appchain.update_state(snos_output.span(), output);
+    appchain.update_state(output);
 
     let expected_log_state_update = LogStateUpdate {
         state_root: 2251620073307221877548100532273969460343974267802546890497101472079704728659,

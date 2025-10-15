@@ -73,7 +73,7 @@ fn read_segment(ref input_iter: SpanIter<felt252>, segment_length: usize) -> Arr
         if x.is_none() {
             break;
         }
-        segment.append(*(x.unwrap()));
+        segment.append(*x.unwrap());
     }
     return segment;
 }
@@ -84,8 +84,6 @@ fn read_segment(ref input_iter: SpanIter<felt252>, segment_length: usize) -> Arr
 /// This deserialization function is expecting a bootloaded Starknet OS output, where the first
 /// three elements of the input are part of the bootloader header.
 pub fn deserialize_os_output(ref input_iter: SpanIter<felt252>) -> StarknetOsOutput {
-    // Skip the bootloader header, which is not relevant for the SNOS output.
-    let _ = read_segment(ref input_iter, 3);
     let header = read_segment(ref input_iter, HEADER_SIZE);
     let use_kzg_da = header[USE_KZG_DA_OFFSET];
     let full_output = header[FULL_OUTPUT_OFFSET];
@@ -187,10 +185,6 @@ mod tests {
     #[should_panic(expected: "KZG DA is not supported yet")]
     fn test_deserialize_os_output_kzg_failure() {
         let mut input = array![];
-        // Bootloader header.
-        input.append(0);
-        input.append(0);
-        input.append(0);
         // SNOS output header.
         input.append('1');
         input.append('2');
@@ -217,10 +211,6 @@ mod tests {
     #[should_panic(expected: "Full output is not supported")]
     fn test_deserialize_os_output_full_output_failure() {
         let mut input = array![];
-        // Bootloader header.
-        input.append(0);
-        input.append(0);
-        input.append(0);
         // SNOS output header.
         input.append('1');
         input.append('2');
@@ -247,10 +237,6 @@ mod tests {
     #[should_panic(expected: "Aggregator program is not supported yet")]
     fn test_deserialize_os_output_aggregator_program_failure() {
         let mut input = array![];
-        // Bootloader header.
-        input.append(0);
-        input.append(0);
-        input.append(0);
         // SNOS output header.
         input.append('1');
         input.append('2');
@@ -276,10 +262,6 @@ mod tests {
     #[test]
     fn test_deserialize_os_output_no_messages() {
         let mut input = array![];
-        // Bootloader header.
-        input.append(0);
-        input.append(0);
-        input.append(0);
         // SNOS output header.
         input.append('1');
         input.append('2');
@@ -318,10 +300,6 @@ mod tests {
     #[test]
     fn test_deserialize_os_output_with_messages() {
         let mut input = array![];
-        // Bootloader header.
-        input.append(0);
-        input.append(0);
-        input.append(0);
         // SNOS output header.
         input.append('1');
         input.append('2');
