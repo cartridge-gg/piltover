@@ -1,8 +1,7 @@
 //! SNOS output related types and variables.
 //!
 use core::array::SpanIter;
-use core::iter::IntoIterator;
-use core::iter::Iterator;
+use core::iter::{IntoIterator, Iterator};
 use core::num::traits::Zero;
 use starknet::ContractAddress;
 
@@ -75,7 +74,7 @@ fn read_segment(ref input_iter: SpanIter<felt252>, segment_length: usize) -> Arr
             break;
         }
         segment.append(*(x.unwrap()));
-    };
+    }
     return segment;
 }
 
@@ -156,7 +155,7 @@ fn deserialize_messages_to_l1(ref input_iter: SpanIter<felt252>) -> Array<Messag
         let to_address: ContractAddress = (*header[1]).try_into().expect('Invalid to address');
         let message_to_starknet = MessageToStarknet { from_address, to_address, payload };
         messages_to_starknet.append(message_to_starknet);
-    };
+    }
     return messages_to_starknet;
 }
 
@@ -176,7 +175,7 @@ fn deserialize_messages_to_l2(ref input_iter: SpanIter<felt252>) -> Array<Messag
             from_address, to_address, nonce: *header[2], selector: *header[3], payload,
         };
         messages_to_appchain.append(message_to_appchain);
-    };
+    }
     return messages_to_appchain;
 }
 

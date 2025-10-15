@@ -7,7 +7,7 @@ fn deploy_mock() -> IConfigDispatcher {
     let contract = match snf::declare("config_mock").unwrap() {
         snf::DeclareResult::Success(contract) => contract,
         _ => core::panic_with_felt252('AlreadyDeclared not expected'),
-    }; 
+    };
     let calldata = array![c::OWNER.into()];
     let (contract_address, _) = contract.deploy(@calldata).unwrap();
     IConfigDispatcher { contract_address }
