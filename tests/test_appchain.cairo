@@ -266,7 +266,7 @@ fn update_state_ok() {
     };
 
     let expected_state_transition_fact = LogStateTransitionFact {
-        state_transition_fact: 9569589917220687975817779475688105297421184939745602185148891360620827175731,
+        state_transition_fact: 114633794527699706374114173961486460449906440432919417901863925261737258006077,
     };
 
     _spy
