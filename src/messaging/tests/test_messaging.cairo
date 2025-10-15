@@ -159,8 +159,8 @@ fn message_to_appchain_deser() {
 fn send_message_ok() {
     let (mock, mut spy) = deploy_mock();
 
-    let from = c::SPENDER();
-    let to = c::RECIPIENT();
+    let from = c::SPENDER;
+    let to = c::RECIPIENT;
     let selector = selector!("func1");
     let payload = array![1, 2, 3];
 
@@ -181,8 +181,8 @@ fn send_message_ok() {
 fn sn_to_appchain_messages_ok() {
     let (mock, mut spy) = deploy_mock();
 
-    let from = c::SPENDER();
-    let to = c::RECIPIENT();
+    let from = c::SPENDER;
+    let to = c::RECIPIENT;
     let selector = selector!("func1");
     let payload = array![1, 2, 3];
 
@@ -216,8 +216,8 @@ fn sn_to_appchain_messages_ok() {
 fn start_cancellation_ok() {
     let (mock, mut spy) = deploy_mock();
 
-    let from = c::SPENDER();
-    let to = c::RECIPIENT();
+    let from = c::SPENDER;
+    let to = c::RECIPIENT;
     let selector = selector!("func1");
     let payload = array![1, 2, 3];
 
@@ -251,8 +251,8 @@ fn start_cancellation_ok() {
 fn start_cancellation_already_requested() {
     let (mock, _) = deploy_mock();
 
-    let from = c::SPENDER();
-    let to = c::RECIPIENT();
+    let from = c::SPENDER;
+    let to = c::RECIPIENT;
     let selector = selector!("func1");
     let payload = array![1, 2, 3];
 
@@ -270,7 +270,7 @@ fn start_cancellation_already_requested() {
 fn start_cancellation_invalid_nonce() {
     let (mock, _) = deploy_mock();
 
-    let to = c::RECIPIENT();
+    let to = c::RECIPIENT;
     let selector = selector!("func1");
     let payload = array![1, 2, 3];
     let nonce = 0x800000000000011000000000000000000000000000000000000000000000000;
@@ -283,7 +283,7 @@ fn start_cancellation_invalid_nonce() {
 fn start_cancellation_no_message_to_cancel() {
     let (mock, _) = deploy_mock();
 
-    let to = c::RECIPIENT();
+    let to = c::RECIPIENT;
     let selector = selector!("func1");
     let payload = array![1, 2, 3];
     let nonce = 1;
@@ -297,8 +297,8 @@ fn start_cancellation_already_done() {
     let delay_secs = 10;
     let (mock, mut spy) = deploy_mock_with_delay(delay_secs);
 
-    let from = c::SPENDER();
-    let to = c::RECIPIENT();
+    let from = c::SPENDER;
+    let to = c::RECIPIENT;
     let selector = selector!("func1");
     let payload = array![1, 2, 3];
 
@@ -344,8 +344,8 @@ fn cancel_message_ok() {
     let delay_secs = 10;
     let (mock, mut spy) = deploy_mock_with_delay(delay_secs);
 
-    let from = c::SPENDER();
-    let to = c::RECIPIENT();
+    let from = c::SPENDER;
+    let to = c::RECIPIENT;
     let selector = selector!("func1");
     let payload = array![1, 2, 3];
 
@@ -388,7 +388,7 @@ fn cancel_message_ok() {
 fn cancel_message_no_message_to_cancel() {
     let (mock, _) = deploy_mock();
 
-    let to = c::RECIPIENT();
+    let to = c::RECIPIENT;
     let selector = selector!("func1");
     let payload = array![1, 2, 3];
     let nonce = 0;
@@ -402,8 +402,8 @@ fn cancel_message_cancellation_not_requested() {
     let delay_secs = 10;
     let (mock, _) = deploy_mock_with_delay(delay_secs);
 
-    let from = c::SPENDER();
-    let to = c::RECIPIENT();
+    let from = c::SPENDER;
+    let to = c::RECIPIENT;
     let selector = selector!("func1");
     let payload = array![1, 2, 3];
 
@@ -425,8 +425,8 @@ fn cancel_message_cancellation_not_allowed_yet() {
     let delay_secs = 10;
     let (mock, _) = deploy_mock_with_delay(delay_secs);
 
-    let from = c::SPENDER();
-    let to = c::RECIPIENT();
+    let from = c::SPENDER;
+    let to = c::RECIPIENT;
     let selector = selector!("func1");
     let payload = array![1, 2, 3];
 
@@ -467,8 +467,8 @@ fn process_messages_to_starknet_ok() {
 fn process_messages_to_appchain_ok() {
     let mut mock = mock_state_testing();
 
-    let from = c::SPENDER();
-    let to = c::RECIPIENT();
+    let from = c::SPENDER;
+    let to = c::RECIPIENT;
     let selector = selector!("func1");
     let payload = array![1, 2, 3];
 
@@ -505,7 +505,7 @@ fn process_messages_to_appchain_no_seal() {
 fn consume_message_from_appchain_ok() {
     let mut mock = mock_state_testing();
 
-    let from = c::SPENDER();
+    let from = c::SPENDER;
     let to = starknet::get_contract_address();
     let payload = array![1, 2, 3].span();
 
@@ -522,7 +522,7 @@ fn consume_message_from_appchain_ok() {
 fn appchain_to_sn_messages_ok() {
     let mut mock = mock_state_testing();
 
-    let from = c::SPENDER();
+    let from = c::SPENDER;
     let to = starknet::get_contract_address();
     let payload = array![1, 2, 3].span();
 
@@ -545,7 +545,7 @@ fn appchain_to_sn_messages_ok() {
 fn appchain_to_sn_messages_hashes_test() {
     let mut mock = mock_state_testing();
 
-    let from = c::SPENDER();
+    let from = c::SPENDER;
     let to = starknet::get_contract_address();
     let payload = array![1, 2, 3].span();
 
@@ -566,7 +566,7 @@ fn appchain_to_sn_messages_hashes_test() {
 fn consume_message_from_appchain_invalid_to_consume() {
     let mut mock = mock_state_testing();
 
-    let from = c::SPENDER();
+    let from = c::SPENDER;
     let to = starknet::get_contract_address();
     let payload = array![1, 2, 3].span();
 

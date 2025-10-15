@@ -4,14 +4,14 @@ version = "0.1.0"
 edition = "2024_07"
 
 [dependencies]
-starknet = "2.9.2"
+starknet = "2.12.2"
 openzeppelin = "0.20.0"
 integrity = "2.0.0"
 
 [dev-dependencies]
-starknet = "2.9.2"
-snforge_std = "0.34.0"
-openzeppelin_testing = "0.20.0"
+starknet = "2.12.2"
+snforge_std = "0.50.0"
+openzeppelin_testing = "5.0.0"
 
 [scripts]
 test = "snforge test"
@@ -29,3 +29,6 @@ sort-module-level-items = true
 
 [features]
 messaging_test = []
+
+[tool.scarb]
+allow-prebuilt-plugins = ["snforge_std"]

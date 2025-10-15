@@ -177,34 +177,34 @@ fn snos_output_deser() {
 
 #[test]
 fn constructor_ok() {
-    let (_appchain, _spy) = deploy_with_owner(c::OWNER().into());
+    let (_appchain, _spy) = deploy_with_owner(c::OWNER.into());
 }
 
 #[test]
 fn two_step_ownership_transfer_ok() {
-    let (appchain, _spy) = deploy_with_owner(c::OWNER().into());
+    let (appchain, _spy) = deploy_with_owner(c::OWNER.into());
 
-    snf::start_cheat_caller_address(appchain.contract_address, c::OWNER());
+    snf::start_cheat_caller_address(appchain.contract_address, c::OWNER);
     let iownable = IOwnableTwoStepDispatcher { contract_address: appchain.contract_address };
-    iownable.transfer_ownership(c::NEW_OWNER());
+    iownable.transfer_ownership(c::NEW_OWNER);
 
-    assert(iownable.pending_owner() == c::NEW_OWNER(), 'invalid pending owner');
-    assert(iownable.owner() == c::OWNER(), 'owner changed without accepting');
+    assert(iownable.pending_owner() == c::NEW_OWNER, 'invalid pending owner');
+    assert(iownable.owner() == c::OWNER, 'owner changed without accepting');
 
-    snf::start_cheat_caller_address(appchain.contract_address, c::NEW_OWNER());
+    snf::start_cheat_caller_address(appchain.contract_address, c::NEW_OWNER);
     iownable.accept_ownership();
 
-    assert(iownable.owner() == c::NEW_OWNER(), 'owner not updated');
-    assert(iownable.pending_owner() == c::ZERO(), 'pending owner not reset');
+    assert(iownable.owner() == c::NEW_OWNER, 'owner not updated');
+    assert(iownable.pending_owner() == c::ZERO, 'pending owner not reset');
 }
 
 #[test]
 fn appchain_owner_ok() {
-    let (appchain, _spy) = deploy_with_owner(c::OWNER().into());
+    let (appchain, _spy) = deploy_with_owner(c::OWNER.into());
 
     let iconfig = IConfigDispatcher { contract_address: appchain.contract_address };
 
-    snf::start_cheat_caller_address(appchain.contract_address, c::OWNER());
+    snf::start_cheat_caller_address(appchain.contract_address, c::OWNER);
     iconfig
         .set_program_info(
             ProgramInfo {
@@ -219,7 +219,7 @@ fn appchain_owner_ok() {
 #[test]
 #[should_panic(expected: ('Config: not owner or operator',))]
 fn appchain_owner_only() {
-    let (appchain, _spy) = deploy_with_owner(c::OWNER().into());
+    let (appchain, _spy) = deploy_with_owner(c::OWNER.into());
 
     let iconfig = IConfigDispatcher { contract_address: appchain.contract_address };
     iconfig
@@ -236,7 +236,7 @@ fn appchain_owner_only() {
 #[test]
 fn update_state_ok() {
     let (appchain, mut _spy) = deploy_with_owner_and_state(
-        owner: c::OWNER().into(),
+        owner: c::OWNER.into(),
         state_root: 1120029756675208924496185249815549700817638276364867982519015153297469423111,
         block_number: 97999,
         block_hash: 531367489267323329537005801734709408229779133529698992357325410316912085961,
@@ -266,7 +266,7 @@ fn update_state_ok() {
     ]
         .span();
 
-    snf::start_cheat_caller_address(appchain.contract_address, c::OWNER());
+    snf::start_cheat_caller_address(appchain.contract_address, c::OWNER);
     iconfig
         .set_program_info(
             ProgramInfo {
@@ -288,7 +288,7 @@ fn update_state_ok() {
     // and the message to appchain as sealed.
     let snos_output = get_state_update();
     let output = get_output();
-    snf::start_cheat_caller_address(appchain.contract_address, c::OWNER());
+    snf::start_cheat_caller_address(appchain.contract_address, c::OWNER);
     appchain.update_state(snos_output.span(), output);
 
     let expected_log_state_update = LogStateUpdate {
