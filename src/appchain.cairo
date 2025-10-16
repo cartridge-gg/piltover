@@ -35,9 +35,9 @@ pub mod appchain {
     use piltover::interface::IAppchain;
     use piltover::messaging::messaging_cpt;
     use piltover::messaging::messaging_cpt::InternalTrait as MessagingInternal;
+    use piltover::piltover_input::deserialize_layout_bridge_output;
     use piltover::state::state_cpt::InternalTrait as StateInternal;
     use piltover::state::{IStateUpdater, state_cpt};
-    use piltover::piltover_input::deserialize_layout_bridge_output;
     use starknet::storage::StoragePointerReadAccess;
     use starknet::{ClassHash, ContractAddress};
     use super::errors;

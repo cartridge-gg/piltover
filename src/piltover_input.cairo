@@ -73,6 +73,5 @@ mod tests {
             .span();
 
         let _deserialized = deserialize_layout_bridge_output(felts);
-       
     }
 }

@@ -1,5 +1,5 @@
 use core::iter::{Extend, IntoIterator};
-use core::poseidon::{PoseidonImpl};
+use core::poseidon::PoseidonImpl;
 use core::result::ResultTrait;
 use openzeppelin::access::ownable::interface::{
     IOwnableTwoStepDispatcher, IOwnableTwoStepDispatcherTrait,
@@ -113,7 +113,7 @@ fn get_output() -> Span<felt252> {
     // In the output of the bootloaded layout bridge program, the 5th element
     // is the hash of the SNOS output.
     let mut felts = array![
-        0, 0, 'layout_bridge_hash', 'bootloader_hash', 0,0,0,'snos_hash', // Layout bridge header
+        0, 0, 'layout_bridge_hash', 'bootloader_hash', 0, 0, 0, 'snos_hash' // Layout bridge header
     ];
     felts.extend(state_update);
     felts.span()
