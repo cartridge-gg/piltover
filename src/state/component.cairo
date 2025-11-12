@@ -52,18 +52,10 @@ pub mod state_cpt {
                 errors::INVALID_BLOCK_NUMBER,
             );
 
-            // This is temporary solution to the fact that we start proving from block 1
-            // instead of block 0 (genesis block).
-            // Block hash depends on chain id so it will be different for different katana chains.
-            // Not like block number and state root which are the same for all katana chains. When
-            // we start proving from block 0 we can remove this condition and always check for
-            // previous block hash.
-            if program_output.new_block_number != 1 {
-                assert(
-                    self.block_hash.read() == program_output.prev_block_hash,
-                    errors::INVALID_PREVIOUS_BLOCK_HASH,
-                );
-            }
+            assert(
+                self.block_hash.read() == program_output.prev_block_hash,
+                errors::INVALID_PREVIOUS_BLOCK_HASH,
+            );
 
             // fetl252 doesn't support PartialOrd, convert to u256 required to ensure
             // the new block number is greater than the current block number for a valid state
