@@ -75,7 +75,18 @@ pub fn deserialize_layout_bridge_output(data: Span<felt252>) -> LayoutBridgeOutp
         .collect();
     let mut snos_output_iter = snos_output.span().into_iter();
     let output = deserialize_os_output(ref snos_output_iter, False);
-
+    // The `data` vector represents the raw bootloader output of verifying a bootloaded
+    // program SNOS. The bootloader output format is fixed and always encoded as:
+    //
+    //   0 - bootloader task count (always 1)
+    //   1 - bootloaded program output length
+    //   2 - program hash of the bootloaded program 
+    //   3.. - output values
+    //
+    // Here, the outer bootloader output corresponds to the LayoutBridge program, and its
+    // output contains another bootloader output produced by the SNOS verification.
+    // The fields below are extracted by index according to this invariant layout.
+    
     LayoutBridgeOutput {
         bootloader_task_count: *data.at(0),
         output_length: *data.at(1),

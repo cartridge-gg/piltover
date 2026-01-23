@@ -152,24 +152,16 @@ pub mod appchain {
 
             let lb = piltover_input.get_layout_bridge_output();
 
-            // StarknetOS (SNOS) proof is wrapped in bootloader so 3rd element is the program hash
-            // of bootloaded program, in our case SNOS.
             assert(
                 program_info.snos_program_hash == lb.bootloader_output.snos_program_hash,
                 errors::SNOS_INVALID_PROGRAM_HASH,
             );
 
-            // Layout bridge program is also bootloaded, and the 3rd element is the hash of the
-            // output of the program that has been bootloaded.
             assert(
                 program_info.layout_bridge_program_hash == lb.layout_bridge_program_hash,
                 errors::LAYOUT_BRIDGE_INVALID_PROGRAM_HASH,
             );
 
-            // The 4th element is the program which execution has been verified by the layout bridge
-            // (which is a verified program).
-            // It must match the bootloader hash, since the layout bridge verified the bootloaded
-            // execution of the Starknet OS program.
             assert(
                 program_info.bootloader_program_hash == lb.bootloader_program_hash,
                 errors::LAYOUT_BRIDGE_INVALID_BOOTLOADER_HASH,
