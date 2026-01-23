@@ -45,7 +45,7 @@ impl PiltoverInputImpl of PiltoverInputTrait {
 // This is only a placeholder for future use.
 #[derive(Drop, Serde, Debug)]
 pub struct DaLayerInfo {
-    blob_size: u128,
+    blob_size: felt252,
 }
 
 #[derive(Drop, Serde, Debug)]

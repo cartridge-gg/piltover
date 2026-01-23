@@ -58,11 +58,7 @@ impl<P: starknet::providers::Provider + Sync> AppchainContractReader<P> {
 }
 #[derive()]
 pub struct DaLayerInfo {
-    #[serde(
-        serialize_with = "cainome::cairo_serde::serialize_as_hex",
-        deserialize_with = "cainome::cairo_serde::deserialize_from_hex"
-    )]
-    pub blob_size: u128,
+    pub blob_size: starknet::core::types::Felt,
 }
 impl cainome::cairo_serde::CairoSerde for DaLayerInfo {
     type RustType = Self;
@@ -70,12 +66,14 @@ impl cainome::cairo_serde::CairoSerde for DaLayerInfo {
     #[inline]
     fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
         let mut __size = 0;
-        __size += u128::cairo_serialized_size(&__rust.blob_size);
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.blob_size);
         __size
     }
     fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
         let mut __out: Vec<starknet::core::types::Felt> = vec![];
-        __out.extend(u128::cairo_serialize(&__rust.blob_size));
+        __out.extend(starknet::core::types::Felt::cairo_serialize(
+            &__rust.blob_size,
+        ));
         __out
     }
     fn cairo_deserialize(
@@ -83,8 +81,8 @@ impl cainome::cairo_serde::CairoSerde for DaLayerInfo {
         __offset: usize,
     ) -> cainome::cairo_serde::Result<Self::RustType> {
         let mut __offset = __offset;
-        let blob_size = u128::cairo_deserialize(__felts, __offset)?;
-        __offset += u128::cairo_serialized_size(&blob_size);
+        let blob_size = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&blob_size);
         Ok(DaLayerInfo { blob_size })
     }
 }
