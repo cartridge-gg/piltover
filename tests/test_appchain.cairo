@@ -1,6 +1,5 @@
-use core::iter::Extend;
-use core::iter::IntoIterator;
-use core::poseidon::{PoseidonImpl};
+use core::iter::{Extend, IntoIterator};
+use core::poseidon::PoseidonImpl;
 use core::result::ResultTrait;
 use openzeppelin::access::ownable::interface::{
     IOwnableTwoStepDispatcher, IOwnableTwoStepDispatcherTrait,
@@ -256,10 +255,9 @@ fn update_state_ok() {
     // Updating the state will register the message to starknet ready to be consumed
     // and the message to appchain as sealed.
     let output = get_output();
-    let piltover_input =
-        piltover::piltover_input::PiltoverInput::LayoutBridgeOutputNoDa(output);
+    let piltover_input = piltover::piltover_input::PiltoverInput::LayoutBridgeOutputNoDa(output);
     snf::start_cheat_caller_address(appchain.contract_address, c::OWNER);
-    
+
     appchain.update_state(piltover_input);
 
     let expected_log_state_update = LogStateUpdate {

@@ -57,6 +57,38 @@ impl<P: starknet::providers::Provider + Sync> AppchainContractReader<P> {
     }
 }
 #[derive()]
+pub struct DaLayerInfo {
+    #[serde(
+        serialize_with = "cainome::cairo_serde::serialize_as_hex",
+        deserialize_with = "cainome::cairo_serde::deserialize_from_hex"
+    )]
+    pub blob_size: u128,
+}
+impl cainome::cairo_serde::CairoSerde for DaLayerInfo {
+    type RustType = Self;
+    const SERIALIZED_SIZE: std::option::Option<usize> = None;
+    #[inline]
+    fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
+        let mut __size = 0;
+        __size += u128::cairo_serialized_size(&__rust.blob_size);
+        __size
+    }
+    fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
+        let mut __out: Vec<starknet::core::types::Felt> = vec![];
+        __out.extend(u128::cairo_serialize(&__rust.blob_size));
+        __out
+    }
+    fn cairo_deserialize(
+        __felts: &[starknet::core::types::Felt],
+        __offset: usize,
+    ) -> cainome::cairo_serde::Result<Self::RustType> {
+        let mut __offset = __offset;
+        let blob_size = u128::cairo_deserialize(__felts, __offset)?;
+        __offset += u128::cairo_serialized_size(&blob_size);
+        Ok(DaLayerInfo { blob_size })
+    }
+}
+#[derive()]
 pub struct LogStateTransitionFact {
     pub state_transition_fact: cainome::cairo_serde::U256,
 }
@@ -4065,6 +4097,74 @@ impl TryFrom<&starknet::core::types::Event> for OwnableEvent {
     }
 }
 #[derive()]
+pub enum PiltoverInput {
+    LayoutBridgeOutputNoDa(Vec<starknet::core::types::Felt>),
+    LayoutBridgeOutputWithDa((Vec<starknet::core::types::Felt>, DaLayerInfo)),
+}
+impl cainome::cairo_serde::CairoSerde for PiltoverInput {
+    type RustType = Self;
+    const SERIALIZED_SIZE: std::option::Option<usize> = std::option::Option::None;
+    #[inline]
+    fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
+        match __rust {
+            PiltoverInput::LayoutBridgeOutputNoDa(val) => {
+                Vec::<starknet::core::types::Felt>::cairo_serialized_size(val) + 1
+            }
+            PiltoverInput::LayoutBridgeOutputWithDa(val) => {
+                <(Vec<starknet::core::types::Felt>, DaLayerInfo)>::cairo_serialized_size(val) + 1
+            }
+            _ => 0,
+        }
+    }
+    fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
+        match __rust {
+            PiltoverInput::LayoutBridgeOutputNoDa(val) => {
+                let mut temp = vec![];
+                temp.extend(usize::cairo_serialize(&0usize));
+                temp.extend(Vec::<starknet::core::types::Felt>::cairo_serialize(val));
+                temp
+            }
+            PiltoverInput::LayoutBridgeOutputWithDa(val) => {
+                let mut temp = vec![];
+                temp.extend(usize::cairo_serialize(&1usize));
+                temp.extend(
+                    <(Vec<starknet::core::types::Felt>, DaLayerInfo)>::cairo_serialize(val),
+                );
+                temp
+            }
+            _ => vec![],
+        }
+    }
+    fn cairo_deserialize(
+        __felts: &[starknet::core::types::Felt],
+        __offset: usize,
+    ) -> cainome::cairo_serde::Result<Self::RustType> {
+        let __f = __felts[__offset];
+        let __index = u128::from_be_bytes(__f.to_bytes_be()[16..].try_into().unwrap());
+        match __index as usize {
+            0usize => Ok(PiltoverInput::LayoutBridgeOutputNoDa(Vec::<
+                starknet::core::types::Felt,
+            >::cairo_deserialize(
+                __felts,
+                __offset + 1,
+            )?)),
+            1usize => Ok(PiltoverInput::LayoutBridgeOutputWithDa(<(
+                Vec<starknet::core::types::Felt>,
+                DaLayerInfo,
+            )>::cairo_deserialize(
+                __felts,
+                __offset + 1,
+            )?)),
+            _ => {
+                return Err(cainome::cairo_serde::Error::Deserialize(format!(
+                    "Index not handle for enum {}",
+                    "PiltoverInput"
+                )))
+            }
+        }
+    }
+}
+#[derive()]
 pub enum ReentrancyguardEvent {}
 impl cainome::cairo_serde::CairoSerde for ReentrancyguardEvent {
     type RustType = Self;
@@ -4855,17 +4955,11 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> AppchainContract<A> {
     #[allow(clippy::too_many_arguments)]
     pub fn update_state_getcall(
         &self,
-        snos_output: &Vec<starknet::core::types::Felt>,
-        layout_bridge_output: &Vec<starknet::core::types::Felt>,
+        piltover_input: &PiltoverInput,
     ) -> starknet::core::types::Call {
         use cainome::cairo_serde::CairoSerde;
         let mut __calldata = vec![];
-        __calldata.extend(Vec::<starknet::core::types::Felt>::cairo_serialize(
-            snos_output,
-        ));
-        __calldata.extend(Vec::<starknet::core::types::Felt>::cairo_serialize(
-            layout_bridge_output,
-        ));
+        __calldata.extend(PiltoverInput::cairo_serialize(piltover_input));
         starknet::core::types::Call {
             to: self.address,
             selector: starknet::macros::selector!("update_state"),
@@ -4876,17 +4970,11 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> AppchainContract<A> {
     #[allow(clippy::too_many_arguments)]
     pub fn update_state(
         &self,
-        snos_output: &Vec<starknet::core::types::Felt>,
-        layout_bridge_output: &Vec<starknet::core::types::Felt>,
+        piltover_input: &PiltoverInput,
     ) -> starknet::accounts::ExecutionV3<A> {
         use cainome::cairo_serde::CairoSerde;
         let mut __calldata = vec![];
-        __calldata.extend(Vec::<starknet::core::types::Felt>::cairo_serialize(
-            snos_output,
-        ));
-        __calldata.extend(Vec::<starknet::core::types::Felt>::cairo_serialize(
-            layout_bridge_output,
-        ));
+        __calldata.extend(PiltoverInput::cairo_serialize(piltover_input));
         let __call = starknet::core::types::Call {
             to: self.address,
             selector: starknet::macros::selector!("update_state"),

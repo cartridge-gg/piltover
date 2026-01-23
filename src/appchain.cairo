@@ -18,8 +18,6 @@ mod errors {
 /// Appchain settlement contract on starknet.
 #[starknet::contract]
 pub mod appchain {
-    use crate::piltover_input::PiltoverInputTrait;
-    use crate::piltover_input::PiltoverInput;
     use core::poseidon::{PoseidonImpl, poseidon_hash_span};
     use integrity::Integrity;
     use openzeppelin::access::ownable::OwnableComponent as ownable_cpt;
@@ -41,6 +39,7 @@ pub mod appchain {
     use piltover::state::{IStateUpdater, state_cpt};
     use starknet::storage::StoragePointerReadAccess;
     use starknet::{ClassHash, ContractAddress};
+    use crate::piltover_input::{PiltoverInput, PiltoverInputTrait};
     use super::errors;
 
     /// The default cancellation delay of 5 days.
@@ -171,7 +170,7 @@ pub mod appchain {
             // (which is a verified program).
             // It must match the bootloader hash, since the layout bridge verified the bootloaded
             // execution of the Starknet OS program.
-             assert(
+            assert(
                 program_info.bootloader_program_hash == lb.bootloader_program_hash,
                 errors::LAYOUT_BRIDGE_INVALID_BOOTLOADER_HASH,
             );
