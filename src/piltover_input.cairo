@@ -42,10 +42,11 @@ impl PiltoverInputImpl of PiltoverInputTrait {
     }
 }
 
-// This is only a placeholder for future use.
+
 #[derive(Drop, Serde, Debug)]
 pub struct DaLayerInfo {
-    blob_size: felt252,
+    height: felt252,
+    commitment: felt252,
 }
 
 #[derive(Drop, Serde, Debug)]
@@ -80,13 +81,13 @@ pub fn deserialize_layout_bridge_output(data: Span<felt252>) -> LayoutBridgeOutp
     //
     //   0 - bootloader task count (always 1)
     //   1 - bootloaded program output length
-    //   2 - program hash of the bootloaded program 
+    //   2 - program hash of the bootloaded program
     //   3.. - output values
     //
     // Here, the outer bootloader output corresponds to the LayoutBridge program, and its
     // output contains another bootloader output produced by the SNOS verification.
     // The fields below are extracted by index according to this invariant layout.
-    
+
     LayoutBridgeOutput {
         bootloader_task_count: *data.at(0),
         output_length: *data.at(1),

@@ -58,7 +58,8 @@ impl<P: starknet::providers::Provider + Sync> AppchainContractReader<P> {
 }
 #[derive()]
 pub struct DaLayerInfo {
-    pub blob_size: starknet::core::types::Felt,
+    pub height: starknet::core::types::Felt,
+    pub commitment: starknet::core::types::Felt,
 }
 impl cainome::cairo_serde::CairoSerde for DaLayerInfo {
     type RustType = Self;
@@ -66,13 +67,15 @@ impl cainome::cairo_serde::CairoSerde for DaLayerInfo {
     #[inline]
     fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
         let mut __size = 0;
-        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.blob_size);
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.height);
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.commitment);
         __size
     }
     fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
         let mut __out: Vec<starknet::core::types::Felt> = vec![];
+        __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.height));
         __out.extend(starknet::core::types::Felt::cairo_serialize(
-            &__rust.blob_size,
+            &__rust.commitment,
         ));
         __out
     }
@@ -81,9 +84,11 @@ impl cainome::cairo_serde::CairoSerde for DaLayerInfo {
         __offset: usize,
     ) -> cainome::cairo_serde::Result<Self::RustType> {
         let mut __offset = __offset;
-        let blob_size = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
-        __offset += starknet::core::types::Felt::cairo_serialized_size(&blob_size);
-        Ok(DaLayerInfo { blob_size })
+        let height = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&height);
+        let commitment = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&commitment);
+        Ok(DaLayerInfo { height, commitment })
     }
 }
 #[derive()]
