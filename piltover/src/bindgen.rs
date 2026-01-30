@@ -189,6 +189,79 @@ impl LogStateUpdate {
     }
 }
 #[derive()]
+pub struct LogStateUpdateWithDa {
+    pub state_root: starknet::core::types::Felt,
+    pub block_number: starknet::core::types::Felt,
+    pub block_hash: starknet::core::types::Felt,
+    pub da_layer_height: starknet::core::types::Felt,
+    pub da_layer_commitment: starknet::core::types::Felt,
+}
+impl cainome::cairo_serde::CairoSerde for LogStateUpdateWithDa {
+    type RustType = Self;
+    const SERIALIZED_SIZE: std::option::Option<usize> = None;
+    #[inline]
+    fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
+        let mut __size = 0;
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.state_root);
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.block_number);
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.block_hash);
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.da_layer_height);
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.da_layer_commitment);
+        __size
+    }
+    fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
+        let mut __out: Vec<starknet::core::types::Felt> = vec![];
+        __out.extend(starknet::core::types::Felt::cairo_serialize(
+            &__rust.state_root,
+        ));
+        __out.extend(starknet::core::types::Felt::cairo_serialize(
+            &__rust.block_number,
+        ));
+        __out.extend(starknet::core::types::Felt::cairo_serialize(
+            &__rust.block_hash,
+        ));
+        __out.extend(starknet::core::types::Felt::cairo_serialize(
+            &__rust.da_layer_height,
+        ));
+        __out.extend(starknet::core::types::Felt::cairo_serialize(
+            &__rust.da_layer_commitment,
+        ));
+        __out
+    }
+    fn cairo_deserialize(
+        __felts: &[starknet::core::types::Felt],
+        __offset: usize,
+    ) -> cainome::cairo_serde::Result<Self::RustType> {
+        let mut __offset = __offset;
+        let state_root = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&state_root);
+        let block_number = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&block_number);
+        let block_hash = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&block_hash);
+        let da_layer_height = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&da_layer_height);
+        let da_layer_commitment =
+            starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&da_layer_commitment);
+        Ok(LogStateUpdateWithDa {
+            state_root,
+            block_number,
+            block_hash,
+            da_layer_height,
+            da_layer_commitment,
+        })
+    }
+}
+impl LogStateUpdateWithDa {
+    pub fn event_selector() -> starknet::core::types::Felt {
+        starknet::core::utils::get_selector_from_name("LogStateUpdateWithDa").unwrap()
+    }
+    pub fn event_name() -> &'static str {
+        "LogStateUpdateWithDa"
+    }
+}
+#[derive()]
 pub struct MessageCanceled {
     pub message_hash: starknet::core::types::Felt,
     pub from: cainome::cairo_serde::ContractAddress,
@@ -890,6 +963,7 @@ pub enum AppchainEvent {
     ReentrancyGuardEvent(ReentrancyguardEvent),
     StateEvent(StateEvent),
     LogStateUpdate(LogStateUpdate),
+    LogStateUpdateWithDa(LogStateUpdateWithDa),
     LogStateTransitionFact(LogStateTransitionFact),
 }
 impl cainome::cairo_serde::CairoSerde for AppchainEvent {
@@ -909,6 +983,9 @@ impl cainome::cairo_serde::CairoSerde for AppchainEvent {
             }
             AppchainEvent::StateEvent(val) => StateEvent::cairo_serialized_size(val) + 1,
             AppchainEvent::LogStateUpdate(val) => LogStateUpdate::cairo_serialized_size(val) + 1,
+            AppchainEvent::LogStateUpdateWithDa(val) => {
+                LogStateUpdateWithDa::cairo_serialized_size(val) + 1
+            }
             AppchainEvent::LogStateTransitionFact(val) => {
                 LogStateTransitionFact::cairo_serialized_size(val) + 1
             }
@@ -959,9 +1036,15 @@ impl cainome::cairo_serde::CairoSerde for AppchainEvent {
                 temp.extend(LogStateUpdate::cairo_serialize(val));
                 temp
             }
-            AppchainEvent::LogStateTransitionFact(val) => {
+            AppchainEvent::LogStateUpdateWithDa(val) => {
                 let mut temp = vec![];
                 temp.extend(usize::cairo_serialize(&7usize));
+                temp.extend(LogStateUpdateWithDa::cairo_serialize(val));
+                temp
+            }
+            AppchainEvent::LogStateTransitionFact(val) => {
+                let mut temp = vec![];
+                temp.extend(usize::cairo_serialize(&8usize));
                 temp.extend(LogStateTransitionFact::cairo_serialize(val));
                 temp
             }
@@ -998,7 +1081,10 @@ impl cainome::cairo_serde::CairoSerde for AppchainEvent {
             6usize => Ok(AppchainEvent::LogStateUpdate(
                 LogStateUpdate::cairo_deserialize(__felts, __offset + 1)?,
             )),
-            7usize => Ok(AppchainEvent::LogStateTransitionFact(
+            7usize => Ok(AppchainEvent::LogStateUpdateWithDa(
+                LogStateUpdateWithDa::cairo_deserialize(__felts, __offset + 1)?,
+            )),
+            8usize => Ok(AppchainEvent::LogStateTransitionFact(
                 LogStateTransitionFact::cairo_deserialize(__felts, __offset + 1)?,
             )),
             _ => {
@@ -1708,6 +1794,76 @@ impl TryFrom<&starknet::core::types::EmittedEvent> for AppchainEvent {
                 state_root,
                 block_number,
                 block_hash,
+            }));
+        };
+        let selector = event.keys[0];
+        if selector
+            == starknet::core::utils::get_selector_from_name("LogStateUpdateWithDa")
+                .unwrap_or_else(|_| panic!("Invalid selector for {}", "LogStateUpdateWithDa"))
+        {
+            let mut key_offset = 0 + 1;
+            let mut data_offset = 0;
+            let state_root =
+                match starknet::core::types::Felt::cairo_deserialize(&event.data, data_offset) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return Err(format!(
+                            "Could not deserialize field {} for {}: {:?}",
+                            "state_root", "LogStateUpdateWithDa", e
+                        ))
+                    }
+                };
+            data_offset += starknet::core::types::Felt::cairo_serialized_size(&state_root);
+            let block_number =
+                match starknet::core::types::Felt::cairo_deserialize(&event.data, data_offset) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return Err(format!(
+                            "Could not deserialize field {} for {}: {:?}",
+                            "block_number", "LogStateUpdateWithDa", e
+                        ))
+                    }
+                };
+            data_offset += starknet::core::types::Felt::cairo_serialized_size(&block_number);
+            let block_hash =
+                match starknet::core::types::Felt::cairo_deserialize(&event.data, data_offset) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return Err(format!(
+                            "Could not deserialize field {} for {}: {:?}",
+                            "block_hash", "LogStateUpdateWithDa", e
+                        ))
+                    }
+                };
+            data_offset += starknet::core::types::Felt::cairo_serialized_size(&block_hash);
+            let da_layer_height =
+                match starknet::core::types::Felt::cairo_deserialize(&event.data, data_offset) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return Err(format!(
+                            "Could not deserialize field {} for {}: {:?}",
+                            "da_layer_height", "LogStateUpdateWithDa", e
+                        ))
+                    }
+                };
+            data_offset += starknet::core::types::Felt::cairo_serialized_size(&da_layer_height);
+            let da_layer_commitment =
+                match starknet::core::types::Felt::cairo_deserialize(&event.data, data_offset) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return Err(format!(
+                            "Could not deserialize field {} for {}: {:?}",
+                            "da_layer_commitment", "LogStateUpdateWithDa", e
+                        ))
+                    }
+                };
+            data_offset += starknet::core::types::Felt::cairo_serialized_size(&da_layer_commitment);
+            return Ok(AppchainEvent::LogStateUpdateWithDa(LogStateUpdateWithDa {
+                state_root,
+                block_number,
+                block_hash,
+                da_layer_height,
+                da_layer_commitment,
             }));
         };
         let selector = event.keys[0];
@@ -2439,6 +2595,76 @@ impl TryFrom<&starknet::core::types::Event> for AppchainEvent {
                 state_root,
                 block_number,
                 block_hash,
+            }));
+        };
+        let selector = event.keys[0];
+        if selector
+            == starknet::core::utils::get_selector_from_name("LogStateUpdateWithDa")
+                .unwrap_or_else(|_| panic!("Invalid selector for {}", "LogStateUpdateWithDa"))
+        {
+            let mut key_offset = 0 + 1;
+            let mut data_offset = 0;
+            let state_root =
+                match starknet::core::types::Felt::cairo_deserialize(&event.data, data_offset) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return Err(format!(
+                            "Could not deserialize field {} for {}: {:?}",
+                            "state_root", "LogStateUpdateWithDa", e
+                        ))
+                    }
+                };
+            data_offset += starknet::core::types::Felt::cairo_serialized_size(&state_root);
+            let block_number =
+                match starknet::core::types::Felt::cairo_deserialize(&event.data, data_offset) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return Err(format!(
+                            "Could not deserialize field {} for {}: {:?}",
+                            "block_number", "LogStateUpdateWithDa", e
+                        ))
+                    }
+                };
+            data_offset += starknet::core::types::Felt::cairo_serialized_size(&block_number);
+            let block_hash =
+                match starknet::core::types::Felt::cairo_deserialize(&event.data, data_offset) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return Err(format!(
+                            "Could not deserialize field {} for {}: {:?}",
+                            "block_hash", "LogStateUpdateWithDa", e
+                        ))
+                    }
+                };
+            data_offset += starknet::core::types::Felt::cairo_serialized_size(&block_hash);
+            let da_layer_height =
+                match starknet::core::types::Felt::cairo_deserialize(&event.data, data_offset) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return Err(format!(
+                            "Could not deserialize field {} for {}: {:?}",
+                            "da_layer_height", "LogStateUpdateWithDa", e
+                        ))
+                    }
+                };
+            data_offset += starknet::core::types::Felt::cairo_serialized_size(&da_layer_height);
+            let da_layer_commitment =
+                match starknet::core::types::Felt::cairo_deserialize(&event.data, data_offset) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return Err(format!(
+                            "Could not deserialize field {} for {}: {:?}",
+                            "da_layer_commitment", "LogStateUpdateWithDa", e
+                        ))
+                    }
+                };
+            data_offset += starknet::core::types::Felt::cairo_serialized_size(&da_layer_commitment);
+            return Ok(AppchainEvent::LogStateUpdateWithDa(LogStateUpdateWithDa {
+                state_root,
+                block_number,
+                block_hash,
+                da_layer_height,
+                da_layer_commitment,
             }));
         };
         let selector = event.keys[0];

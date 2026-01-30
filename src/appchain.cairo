@@ -104,6 +104,7 @@ pub mod appchain {
         #[flat]
         StateEvent: state_cpt::Event,
         LogStateUpdate: LogStateUpdate,
+        LogStateUpdateWithDa: LogStateUpdateWithDa,
         LogStateTransitionFact: LogStateTransitionFact,
     }
 
@@ -112,6 +113,15 @@ pub mod appchain {
         pub state_root: felt252,
         pub block_number: felt252,
         pub block_hash: felt252,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct LogStateUpdateWithDa {
+        pub state_root: felt252,
+        pub block_number: felt252,
+        pub block_hash: felt252,
+        pub da_layer_height: felt252,
+        pub da_layer_commitment: felt252,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -209,15 +219,33 @@ pub mod appchain {
             self.messaging.process_messages_to_appchain(messages_to_l2);
 
             self.reentrancy_guard.end();
-
-            self
-                .emit(
-                    LogStateUpdate {
-                        state_root: self.state.state_root.read(),
-                        block_number: self.state.block_number.read(),
-                        block_hash: self.state.block_hash.read(),
-                    },
-                );
+            
+            match piltover_input {
+                PiltoverInput::LayoutBridgeOutputNoDa(_) => {
+                    self
+                        .emit(
+                            LogStateUpdate {
+                                state_root: self.state.state_root.read(),
+                                block_number: self.state.block_number.read(),
+                                block_hash: self.state.block_hash.read(),
+                            },
+                        );
+                },
+                PiltoverInput::LayoutBridgeOutputWithDa((
+                    _, da_layer_info,
+                )) => {
+                    self
+                        .emit(
+                            LogStateUpdateWithDa {
+                                state_root: self.state.state_root.read(),
+                                block_number: self.state.block_number.read(),
+                                block_hash: self.state.block_hash.read(),
+                                da_layer_height: da_layer_info.height,
+                                da_layer_commitment: da_layer_info.commitment,
+                            },
+                        );
+                },
+            };
         }
     }
 

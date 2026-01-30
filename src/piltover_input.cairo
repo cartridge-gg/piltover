@@ -45,8 +45,8 @@ impl PiltoverInputImpl of PiltoverInputTrait {
 
 #[derive(Drop, Serde, Debug)]
 pub struct DaLayerInfo {
-    height: felt252,
-    commitment: felt252,
+    pub height: felt252,
+    pub commitment: felt252,
 }
 
 #[derive(Drop, Serde, Debug)]
