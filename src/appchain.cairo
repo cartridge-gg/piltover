@@ -219,7 +219,7 @@ pub mod appchain {
             self.messaging.process_messages_to_appchain(messages_to_l2);
 
             self.reentrancy_guard.end();
-            
+
             match piltover_input {
                 PiltoverInput::LayoutBridgeOutputNoDa(_) => {
                     self
