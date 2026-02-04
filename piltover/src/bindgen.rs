@@ -60,6 +60,7 @@ impl<P: starknet::providers::Provider + Sync> AppchainContractReader<P> {
 pub struct DaLayerInfo {
     pub height: starknet::core::types::Felt,
     pub commitment: starknet::core::types::Felt,
+    pub namespace: starknet::core::types::Felt,
 }
 impl cainome::cairo_serde::CairoSerde for DaLayerInfo {
     type RustType = Self;
@@ -69,6 +70,7 @@ impl cainome::cairo_serde::CairoSerde for DaLayerInfo {
         let mut __size = 0;
         __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.height);
         __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.commitment);
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.namespace);
         __size
     }
     fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
@@ -76,6 +78,9 @@ impl cainome::cairo_serde::CairoSerde for DaLayerInfo {
         __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.height));
         __out.extend(starknet::core::types::Felt::cairo_serialize(
             &__rust.commitment,
+        ));
+        __out.extend(starknet::core::types::Felt::cairo_serialize(
+            &__rust.namespace,
         ));
         __out
     }
@@ -88,7 +93,13 @@ impl cainome::cairo_serde::CairoSerde for DaLayerInfo {
         __offset += starknet::core::types::Felt::cairo_serialized_size(&height);
         let commitment = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
         __offset += starknet::core::types::Felt::cairo_serialized_size(&commitment);
-        Ok(DaLayerInfo { height, commitment })
+        let namespace = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&namespace);
+        Ok(DaLayerInfo {
+            height,
+            commitment,
+            namespace,
+        })
     }
 }
 #[derive()]
@@ -195,6 +206,7 @@ pub struct LogStateUpdateWithDa {
     pub block_hash: starknet::core::types::Felt,
     pub da_layer_height: starknet::core::types::Felt,
     pub da_layer_commitment: starknet::core::types::Felt,
+    pub da_layer_namespace: starknet::core::types::Felt,
 }
 impl cainome::cairo_serde::CairoSerde for LogStateUpdateWithDa {
     type RustType = Self;
@@ -207,6 +219,7 @@ impl cainome::cairo_serde::CairoSerde for LogStateUpdateWithDa {
         __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.block_hash);
         __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.da_layer_height);
         __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.da_layer_commitment);
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.da_layer_namespace);
         __size
     }
     fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
@@ -226,6 +239,9 @@ impl cainome::cairo_serde::CairoSerde for LogStateUpdateWithDa {
         __out.extend(starknet::core::types::Felt::cairo_serialize(
             &__rust.da_layer_commitment,
         ));
+        __out.extend(starknet::core::types::Felt::cairo_serialize(
+            &__rust.da_layer_namespace,
+        ));
         __out
     }
     fn cairo_deserialize(
@@ -244,12 +260,15 @@ impl cainome::cairo_serde::CairoSerde for LogStateUpdateWithDa {
         let da_layer_commitment =
             starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
         __offset += starknet::core::types::Felt::cairo_serialized_size(&da_layer_commitment);
+        let da_layer_namespace = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&da_layer_namespace);
         Ok(LogStateUpdateWithDa {
             state_root,
             block_number,
             block_hash,
             da_layer_height,
             da_layer_commitment,
+            da_layer_namespace,
         })
     }
 }
@@ -1858,12 +1877,24 @@ impl TryFrom<&starknet::core::types::EmittedEvent> for AppchainEvent {
                     }
                 };
             data_offset += starknet::core::types::Felt::cairo_serialized_size(&da_layer_commitment);
+            let da_layer_namespace =
+                match starknet::core::types::Felt::cairo_deserialize(&event.data, data_offset) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return Err(format!(
+                            "Could not deserialize field {} for {}: {:?}",
+                            "da_layer_namespace", "LogStateUpdateWithDa", e
+                        ))
+                    }
+                };
+            data_offset += starknet::core::types::Felt::cairo_serialized_size(&da_layer_namespace);
             return Ok(AppchainEvent::LogStateUpdateWithDa(LogStateUpdateWithDa {
                 state_root,
                 block_number,
                 block_hash,
                 da_layer_height,
                 da_layer_commitment,
+                da_layer_namespace,
             }));
         };
         let selector = event.keys[0];
@@ -2659,12 +2690,24 @@ impl TryFrom<&starknet::core::types::Event> for AppchainEvent {
                     }
                 };
             data_offset += starknet::core::types::Felt::cairo_serialized_size(&da_layer_commitment);
+            let da_layer_namespace =
+                match starknet::core::types::Felt::cairo_deserialize(&event.data, data_offset) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return Err(format!(
+                            "Could not deserialize field {} for {}: {:?}",
+                            "da_layer_namespace", "LogStateUpdateWithDa", e
+                        ))
+                    }
+                };
+            data_offset += starknet::core::types::Felt::cairo_serialized_size(&da_layer_namespace);
             return Ok(AppchainEvent::LogStateUpdateWithDa(LogStateUpdateWithDa {
                 state_root,
                 block_number,
                 block_hash,
                 da_layer_height,
                 da_layer_commitment,
+                da_layer_namespace,
             }));
         };
         let selector = event.keys[0];

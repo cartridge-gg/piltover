@@ -122,6 +122,7 @@ pub mod appchain {
         pub block_hash: felt252,
         pub da_layer_height: felt252,
         pub da_layer_commitment: felt252,
+        pub da_layer_namespace: felt252,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -242,6 +243,7 @@ pub mod appchain {
                                 block_hash: self.state.block_hash.read(),
                                 da_layer_height: da_layer_info.height,
                                 da_layer_commitment: da_layer_info.commitment,
+                                da_layer_namespace: da_layer_info.namespace,
                             },
                         );
                 },
