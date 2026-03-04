@@ -18,30 +18,28 @@ mod errors {
 /// Appchain settlement contract on starknet.
 #[starknet::contract]
 pub mod appchain {
-    use core::iter::IntoIterator;
     use core::poseidon::{PoseidonImpl, poseidon_hash_span};
     use integrity::Integrity;
-    use openzeppelin::access::ownable::{
-        OwnableComponent as ownable_cpt, OwnableComponent::InternalTrait as OwnableInternal,
-    };
-    use openzeppelin::security::reentrancyguard::{
-        ReentrancyGuardComponent,
-        ReentrancyGuardComponent::InternalTrait as InternalReentrancyGuardImpl,
-    };
-    use openzeppelin::upgrades::{
-        UpgradeableComponent as upgradeable_cpt,
-        UpgradeableComponent::InternalTrait as UpgradeableInternal, interface::IUpgradeable,
-    };
+    use openzeppelin::access::ownable::OwnableComponent as ownable_cpt;
+    use openzeppelin::access::ownable::OwnableComponent::InternalTrait as OwnableInternal;
+    use openzeppelin::security::reentrancyguard::ReentrancyGuardComponent;
+    use openzeppelin::security::reentrancyguard::ReentrancyGuardComponent::InternalTrait as InternalReentrancyGuardImpl;
+    use openzeppelin::upgrades::UpgradeableComponent as upgradeable_cpt;
+    use openzeppelin::upgrades::UpgradeableComponent::InternalTrait as UpgradeableInternal;
+    use openzeppelin::upgrades::interface::IUpgradeable;
     use piltover::components::onchain_data_fact_tree_encoder::{
         DataAvailabilityFact, encode_fact_with_onchain_data,
     };
-    use piltover::config::{IConfig, config_cpt, config_cpt::InternalTrait as ConfigInternal};
+    use piltover::config::config_cpt::InternalTrait as ConfigInternal;
+    use piltover::config::{IConfig, config_cpt};
     use piltover::interface::IAppchain;
-    use piltover::messaging::{messaging_cpt, messaging_cpt::InternalTrait as MessagingInternal};
-    use piltover::snos_output::deserialize_os_output;
-    use piltover::state::{IStateUpdater, state_cpt, state_cpt::InternalTrait as StateInternal};
-    use starknet::storage::{StoragePointerReadAccess};
+    use piltover::messaging::messaging_cpt;
+    use piltover::messaging::messaging_cpt::InternalTrait as MessagingInternal;
+    use piltover::state::state_cpt::InternalTrait as StateInternal;
+    use piltover::state::{IStateUpdater, state_cpt};
+    use starknet::storage::StoragePointerReadAccess;
     use starknet::{ClassHash, ContractAddress};
+    use crate::piltover_input::{PiltoverInput, PiltoverInputTrait};
     use super::errors;
 
     /// The default cancellation delay of 5 days.
@@ -106,6 +104,7 @@ pub mod appchain {
         #[flat]
         StateEvent: state_cpt::Event,
         LogStateUpdate: LogStateUpdate,
+        LogStateUpdateWithDa: LogStateUpdateWithDa,
         LogStateTransitionFact: LogStateTransitionFact,
     }
 
@@ -114,6 +113,16 @@ pub mod appchain {
         pub state_root: felt252,
         pub block_number: felt252,
         pub block_hash: felt252,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct LogStateUpdateWithDa {
+        pub state_root: felt252,
+        pub block_number: felt252,
+        pub block_hash: felt252,
+        pub da_layer_height: felt252,
+        pub da_layer_commitment: felt252,
+        pub da_layer_namespace: felt252,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -144,54 +153,34 @@ pub mod appchain {
 
     #[abi(embed_v0)]
     impl Appchain of IAppchain<ContractState> {
-        fn update_state(
-            ref self: ContractState,
-            snos_output: Span<felt252>,
-            layout_bridge_output: Span<felt252>,
-        ) {
+        fn update_state(ref self: ContractState, piltover_input: PiltoverInput) {
             self.reentrancy_guard.start();
             self.config.assert_only_owner_or_operator();
 
             let program_info = self.config.program_info.read();
 
-            // StarknetOS (SNOS) proof is wrapped in bootloader so 3rd element is the program hash
-            // of bootloaded program, in our case SNOS.
-            let snos_program_hash = snos_output.at(2);
+            let layout_bridge_output = piltover_input.get_raw_output();
+
+            let lb = piltover_input.get_layout_bridge_output();
+
             assert(
-                program_info.snos_program_hash == *snos_program_hash,
+                program_info.snos_program_hash == lb.bootloader_output.snos_program_hash,
                 errors::SNOS_INVALID_PROGRAM_HASH,
             );
 
-            // Layout bridge program is also bootloaded, and the 3rd element is the hash of the
-            // output of the program that has been bootloaded.
-            let layout_bridge_program_hash = layout_bridge_output.at(2);
             assert(
-                program_info.layout_bridge_program_hash == *layout_bridge_program_hash,
+                program_info.layout_bridge_program_hash == lb.layout_bridge_program_hash,
                 errors::LAYOUT_BRIDGE_INVALID_PROGRAM_HASH,
             );
 
-            // The 4th element is the program which execution has been verified by the layout bridge
-            // (which is a verified program).
-            // It must match the bootloader hash, since the layout bridge verified the bootloaded
-            // execution of the Starknet OS program.
             assert(
-                *layout_bridge_output.at(3) == program_info.bootloader_program_hash,
+                program_info.bootloader_program_hash == lb.bootloader_program_hash,
                 errors::LAYOUT_BRIDGE_INVALID_BOOTLOADER_HASH,
-            );
-
-            let snos_output_hash = poseidon_hash_span(snos_output);
-            // Layout bridge program is also bootloaded, and the 5th element is the hash of the
-            // output of the program that has been layout-bridged.
-            let snos_output_hash_in_bridge_output = layout_bridge_output.at(4);
-            assert(
-                snos_output_hash == *snos_output_hash_in_bridge_output,
-                errors::SNOS_INVALID_OUTPUT_HASH,
             );
 
             let output_hash = poseidon_hash_span(layout_bridge_output);
 
-            let mut snos_output_iter = snos_output.into_iter();
-            let program_output_struct = deserialize_os_output(ref snos_output_iter);
+            let program_output_struct = lb.bootloader_output.snos_output;
 
             // Those values are currently not being used. They are enforced to 0 here
             // instead of being passed as arguments to avoid operator manipulation
@@ -232,14 +221,33 @@ pub mod appchain {
 
             self.reentrancy_guard.end();
 
-            self
-                .emit(
-                    LogStateUpdate {
-                        state_root: self.state.state_root.read(),
-                        block_number: self.state.block_number.read(),
-                        block_hash: self.state.block_hash.read(),
-                    },
-                );
+            match piltover_input {
+                PiltoverInput::LayoutBridgeOutputNoDa(_) => {
+                    self
+                        .emit(
+                            LogStateUpdate {
+                                state_root: self.state.state_root.read(),
+                                block_number: self.state.block_number.read(),
+                                block_hash: self.state.block_hash.read(),
+                            },
+                        );
+                },
+                PiltoverInput::LayoutBridgeOutputWithDa((
+                    _, da_layer_info,
+                )) => {
+                    self
+                        .emit(
+                            LogStateUpdateWithDa {
+                                state_root: self.state.state_root.read(),
+                                block_number: self.state.block_number.read(),
+                                block_hash: self.state.block_hash.read(),
+                                da_layer_height: da_layer_info.height,
+                                da_layer_commitment: da_layer_info.commitment,
+                                da_layer_namespace: da_layer_info.namespace,
+                            },
+                        );
+                },
+            };
         }
     }
 
