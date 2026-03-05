@@ -2,7 +2,7 @@
 //!
 //! Interface for appchain settlement contract.
 
-use crate::piltover_input::PiltoverInput;
+use crate::input::component::PiltoverInput;
 
 #[starknet::interface]
 pub trait IAppchain<T> {
@@ -16,8 +16,21 @@ pub trait IAppchain<T> {
     /// - A proof for SNOS execution.
     /// - A layout bridge proof, which uses a layout supported by the onchain verifier.
     ///
+    /// Alternatively, a `TeeInput` can be used to settle state via an AMD TEE attestation
+    /// rather than a ZK proof.
+    ///
+    /// # Important: `facts_registry` configuration
+    ///
+    /// The `facts_registry` address stored in config serves different purposes depending on
+    /// the input variant:
+    /// - `LayoutBridgeOutput*` — must point to an **Integrity fact registry** contract.
+    /// - `TeeInput`            — must point to an **IAMDTeeRegistry** contract.
+    ///
+    /// Ensure the correct registry is configured before submitting each input type.
+    ///
     /// # Arguments
     ///
-    /// * `layout_bridge_program_output` - The layout bridge proof output (bootloaded).
+    /// * `piltover_input` - The proof input: a layout bridge output (with or without DA) or a
+    ///   TEE attestation input.
     fn update_state(ref self: T, piltover_input: PiltoverInput);
 }

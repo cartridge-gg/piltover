@@ -43,6 +43,7 @@ mod errors {
 #[starknet::component]
 pub mod messaging_cpt {
     use core::num::traits::Zero;
+    use piltover::input::snos_output::{MessageToAppchain, MessageToStarknet};
     #[cfg(feature: 'messaging_test')]
     use piltover::messaging::IMessagingTest;
     use piltover::messaging::hash;
@@ -50,7 +51,6 @@ pub mod messaging_cpt {
     use piltover::messaging::types::{
         MessageHash, MessageToAppchainStatus, MessageToStarknetStatus, Nonce,
     };
-    use piltover::snos_output::{MessageToAppchain, MessageToStarknet};
     use starknet::ContractAddress;
     use starknet::storage::{
         Map, StorageMapReadAccess, StorageMapWriteAccess, StoragePointerReadAccess,

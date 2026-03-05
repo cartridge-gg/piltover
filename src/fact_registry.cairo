@@ -29,6 +29,21 @@ pub trait IFactRegistry<T> {
 /// We then mock the behavior of this function defined here:
 /// <https://github.com/HerodotusDev/integrity/blob/f3beacec88cd225a88945649627f3c3ea2232077/src/lib_utils.cairo#L59>
 #[starknet::contract]
+pub mod fact_registry_failing_mock {
+    #[storage]
+    struct Storage {}
+
+    #[abi(embed_v0)]
+    impl FactRegistryFailingImplMock of super::IFactRegistry<ContractState> {
+        fn get_all_verifications_for_fact_hash(
+            self: @ContractState, fact: felt252,
+        ) -> Array<super::VerificationListElement> {
+            array![]
+        }
+    }
+}
+
+#[starknet::contract]
 pub mod fact_registry_mock {
     #[storage]
     struct Storage {}

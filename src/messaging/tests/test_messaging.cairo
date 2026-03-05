@@ -1,6 +1,7 @@
 use core::iter::IntoIterator;
 use core::num::traits::Zero;
 use piltover::config::tests::constants as c;
+use piltover::input::snos_output::{MessageToAppchain, MessageToStarknet, deserialize_messages};
 #[cfg(feature: 'messaging_test')]
 use piltover::messaging::IMessagingTest;
 use piltover::messaging::messaging_cpt::{
@@ -12,7 +13,6 @@ use piltover::messaging::{
     IMessaging, IMessagingDispatcher, IMessagingDispatcherTrait, hash, messaging_cpt,
     messaging_mock,
 };
-use piltover::snos_output::{MessageToAppchain, MessageToStarknet, deserialize_messages};
 use snforge_std as snf;
 use snforge_std::{ContractClassTrait, EventSpy, EventSpyAssertionsTrait};
 

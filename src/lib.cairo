@@ -1,8 +1,12 @@
 pub mod appchain;
 pub mod fact_registry;
 pub mod interface;
-pub mod piltover_input;
-pub mod snos_output;
+pub mod input {
+    pub mod component;
+    pub mod layout_bridge;
+    pub mod snos_output;
+    pub mod tee_input;
+}
 
 // Components
 pub mod config {

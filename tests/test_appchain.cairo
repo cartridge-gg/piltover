@@ -1,6 +1,5 @@
 use core::iter::{Extend, IntoIterator};
 use core::poseidon::PoseidonImpl;
-use core::result::ResultTrait;
 use openzeppelin::access::ownable::interface::{
     IOwnableTwoStepDispatcher, IOwnableTwoStepDispatcherTrait,
 };
@@ -10,20 +9,20 @@ use piltover::appchain::appchain::{Event, LogStateTransitionFact, LogStateUpdate
 use piltover::config::tests::constants as c;
 use piltover::config::{IConfigDispatcher, IConfigDispatcherTrait, ProgramInfo};
 use piltover::fact_registry::IFactRegistryDispatcher;
+use piltover::input::snos_output::{StarknetOsOutput, deserialize_os_output};
 use piltover::interface::{IAppchainDispatcher, IAppchainDispatcherTrait};
 use piltover::messaging::{IMessagingDispatcher, IMessagingDispatcherTrait};
-use piltover::snos_output::{StarknetOsOutput, deserialize_os_output};
 use snforge_std as snf;
 use snforge_std::{ContractClassTrait, EventSpy, EventSpyAssertionsTrait};
-use starknet::ContractAddress;
+use starknet::{ContractAddress, SyscallResultTrait};
 /// Deploys the appchain contract.
 fn deploy_with_owner(owner: ContractAddress) -> (IAppchainDispatcher, EventSpy) {
-    let contract = match snf::declare("appchain").unwrap() {
+    let contract = match snf::declare("appchain").unwrap_syscall() {
         snf::DeclareResult::Success(contract) => contract,
         _ => core::panic_with_felt252('AlreadyDeclared not expected'),
     };
     let calldata = array![owner.into(), 0, 0, 0];
-    let (contract_address, _) = contract.deploy(@calldata).unwrap();
+    let (contract_address, _) = contract.deploy(@calldata).unwrap_syscall();
 
     let mut spy = snf::spy_events();
 
@@ -34,26 +33,35 @@ fn deploy_with_owner(owner: ContractAddress) -> (IAppchainDispatcher, EventSpy) 
 fn deploy_with_owner_and_state(
     owner: ContractAddress, state_root: felt252, block_number: felt252, block_hash: felt252,
 ) -> (IAppchainDispatcher, EventSpy) {
-    let contract = match snf::declare("appchain").unwrap() {
+    let contract = match snf::declare("appchain").unwrap_syscall() {
         snf::DeclareResult::Success(contract) => contract,
         _ => core::panic_with_felt252('AlreadyDeclared not expected'),
     };
-    let block_number: felt252 = block_number.into();
     let calldata = array![owner.into(), state_root, block_number, block_hash];
-    let (contract_address, _) = contract.deploy(@calldata).unwrap();
+    let (contract_address, _) = contract.deploy(@calldata).unwrap_syscall();
 
     let mut spy = snf::spy_events();
 
     (IAppchainDispatcher { contract_address }, spy)
 }
 
-/// Deploys the fact registry mock contract.
-fn deploy_fact_registry_mock() -> IFactRegistryDispatcher {
-    let contract = match snf::declare("fact_registry_mock").unwrap() {
+/// Deploys the failing fact registry mock contract (returns empty verifications).
+fn deploy_fact_registry_failing_mock() -> IFactRegistryDispatcher {
+    let contract = match snf::declare("fact_registry_failing_mock").unwrap_syscall() {
         snf::DeclareResult::Success(contract) => contract,
         _ => core::panic_with_felt252('AlreadyDeclared not expected'),
     };
-    let (contract_address, _) = contract.deploy(@array![]).unwrap();
+    let (contract_address, _) = contract.deploy(@array![]).unwrap_syscall();
+    IFactRegistryDispatcher { contract_address }
+}
+
+/// Deploys the fact registry mock contract.
+fn deploy_fact_registry_mock() -> IFactRegistryDispatcher {
+    let contract = match snf::declare("fact_registry_mock").unwrap_syscall() {
+        snf::DeclareResult::Success(contract) => contract,
+        _ => core::panic_with_felt252('AlreadyDeclared not expected'),
+    };
+    let (contract_address, _) = contract.deploy(@array![]).unwrap_syscall();
     IFactRegistryDispatcher { contract_address }
 }
 
@@ -204,6 +212,123 @@ fn appchain_owner_only() {
         );
 }
 
+fn setup_for_update_state(
+    program_info: ProgramInfo,
+) -> (IAppchainDispatcher, IMessagingDispatcher) {
+    let (appchain, _spy) = deploy_with_owner_and_state(
+        owner: c::OWNER,
+        state_root: 1120029756675208924496185249815549700817638276364867982519015153297469423111,
+        block_number: 97999,
+        block_hash: 531367489267323329537005801734709408229779133529698992357325410316912085961,
+    );
+
+    let imsg = IMessagingDispatcher { contract_address: appchain.contract_address };
+    let iconfig = IConfigDispatcher { contract_address: appchain.contract_address };
+    let fact_registry_mock = deploy_fact_registry_mock();
+
+    let contract_sn = 993696174272377493693496825928908586134624850969.try_into().unwrap();
+    let contract_appc = 3256441166037631918262930812410838598500200462657642943867372734773841898370
+        .try_into()
+        .unwrap();
+    let selector_appc =
+        1285101517810983806491589552491143496277809242732141897358598292095611420389;
+    let payload_sn_to_appc = array![
+        1905350129216923298156817020930524704572804705313566176282348575247442538663,
+        100000000000000000, 0,
+    ]
+        .span();
+
+    snf::start_cheat_caller_address(appchain.contract_address, c::OWNER);
+    iconfig.set_program_info(program_info);
+    iconfig.set_facts_registry(address: fact_registry_mock.contract_address);
+    snf::store(appchain.contract_address, selector!("sn_to_appc_nonce"), array![1629170].span());
+
+    snf::start_cheat_caller_address(appchain.contract_address, contract_sn);
+    imsg.send_message_to_appchain(contract_appc, selector_appc, payload_sn_to_appc);
+
+    snf::start_cheat_caller_address(appchain.contract_address, c::OWNER);
+    (appchain, imsg)
+}
+
+fn correct_program_info() -> ProgramInfo {
+    ProgramInfo {
+        bootloader_program_hash: 'bootloader_hash',
+        snos_config_hash: 8868593919264901768958912247765226517850727970326290266005120699201631282,
+        snos_program_hash: 'snos_hash',
+        layout_bridge_program_hash: 'layout_bridge_hash',
+    }
+}
+
+#[test]
+#[should_panic(expected: ('snos: invalid program hash',))]
+fn update_state_invalid_snos_program_hash() {
+    let mut info = correct_program_info();
+    info.snos_program_hash = 'wrong_snos_hash';
+    let (appchain, _) = setup_for_update_state(info);
+    let piltover_input = piltover::input::component::PiltoverInput::LayoutBridgeOutputNoDa(
+        get_output(),
+    );
+    appchain.update_state(piltover_input);
+}
+
+#[test]
+#[should_panic(expected: ('lb: invalid program hash',))]
+fn update_state_invalid_layout_bridge_hash() {
+    let mut info = correct_program_info();
+    info.layout_bridge_program_hash = 'wrong_lb_hash';
+    let (appchain, _) = setup_for_update_state(info);
+    let piltover_input = piltover::input::component::PiltoverInput::LayoutBridgeOutputNoDa(
+        get_output(),
+    );
+    appchain.update_state(piltover_input);
+}
+
+#[test]
+#[should_panic(expected: ('lb: invalid bootloader hash',))]
+fn update_state_invalid_bootloader_hash() {
+    let mut info = correct_program_info();
+    info.bootloader_program_hash = 'wrong_bootloader_hash';
+    let (appchain, _) = setup_for_update_state(info);
+    let piltover_input = piltover::input::component::PiltoverInput::LayoutBridgeOutputNoDa(
+        get_output(),
+    );
+    appchain.update_state(piltover_input);
+}
+
+#[test]
+#[should_panic(expected: ('snos: invalid config hash',))]
+fn update_state_invalid_config_hash() {
+    let mut info = correct_program_info();
+    info.snos_config_hash = 'wrong_config_hash';
+    let (appchain, _) = setup_for_update_state(info);
+    let piltover_input = piltover::input::component::PiltoverInput::LayoutBridgeOutputNoDa(
+        get_output(),
+    );
+    appchain.update_state(piltover_input);
+}
+
+#[test]
+#[should_panic(expected: ('no fact registered',))]
+fn update_state_no_fact_registered() {
+    let (appchain, _spy) = deploy_with_owner_and_state(
+        owner: c::OWNER,
+        state_root: 1120029756675208924496185249815549700817638276364867982519015153297469423111,
+        block_number: 97999,
+        block_hash: 531367489267323329537005801734709408229779133529698992357325410316912085961,
+    );
+    let iconfig = IConfigDispatcher { contract_address: appchain.contract_address };
+    let failing_registry = deploy_fact_registry_failing_mock();
+
+    snf::start_cheat_caller_address(appchain.contract_address, c::OWNER);
+    iconfig.set_program_info(correct_program_info());
+    iconfig.set_facts_registry(address: failing_registry.contract_address);
+
+    let piltover_input = piltover::input::component::PiltoverInput::LayoutBridgeOutputNoDa(
+        get_output(),
+    );
+    appchain.update_state(piltover_input);
+}
+
 #[test]
 fn update_state_ok() {
     let (appchain, mut _spy) = deploy_with_owner_and_state(
@@ -255,7 +380,7 @@ fn update_state_ok() {
     // Updating the state will register the message to starknet ready to be consumed
     // and the message to appchain as sealed.
     let output = get_output();
-    let piltover_input = piltover::piltover_input::PiltoverInput::LayoutBridgeOutputNoDa(output);
+    let piltover_input = piltover::input::component::PiltoverInput::LayoutBridgeOutputNoDa(output);
     snf::start_cheat_caller_address(appchain.contract_address, c::OWNER);
 
     appchain.update_state(piltover_input);

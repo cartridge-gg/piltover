@@ -1,7 +1,7 @@
 //! SPDX-License-Identifier: MIT
 //!
 //! Interface for Appchain - Starknet state.
-use piltover::snos_output::StarknetOsOutput;
+use piltover::input::layout_bridge::StateUpdateInput;
 
 #[starknet::interface]
 pub trait IState<T> {
@@ -20,6 +20,7 @@ pub trait IStateUpdater<T> {
     ///
     /// # Arguments
     ///
-    /// * `program_output` - The StarknetOS state update output.
-    fn update(ref self: T, program_output: StarknetOsOutput);
+    /// * `input` - The state update input. Its made from either the output of the layout bridge or
+    /// the TEE proof.
+    fn update(ref self: T, input: StateUpdateInput);
 }
