@@ -132,12 +132,53 @@ pub trait PiltoverInputTrait {
                     high: u128_byte_reverse(report_data.limb0),
                 };
                 let commitment = poseidon_hash_span(
-                    array![*tee_input.block_number, *tee_input.block_hash, *tee_input.state_root]
+                    array![
+                        *tee_input.prev_state_root,
+                        *tee_input.state_root,
+                        *tee_input.prev_block_hash,
+                        *tee_input.block_hash,
+                        *tee_input.prev_block_number,
+                        *tee_input.block_number,
+                        *tee_input.messages_commitment,
+                    ]
                         .span(),
                 );
                 assert!(expected_commitment == commitment.into());
 
                 assert!(journal.result == Success);
+
+                // Verify messages_commitment matches the provided message data.
+                // l2_to_l1: recompute Poseidon hash for each MessageToStarknet.
+                let mut l2_to_l1_hashes: Array<felt252> = array![];
+                for msg in *tee_input.messages_to_starknet {
+                    let payload_hash = poseidon_hash_span(
+                        {
+                            let mut v: Array<felt252> = array![(*msg.payload).len().into()];
+                            for p in *msg.payload {
+                                v.append(*p);
+                            }
+                            v.span()
+                        },
+                    );
+                    l2_to_l1_hashes
+                        .append(
+                            poseidon_hash_span(
+                                array![
+                                    (*msg.from_address).into(),
+                                    (*msg.to_address).into(),
+                                    payload_hash,
+                                ]
+                                    .span(),
+                            ),
+                        );
+                }
+                let l2_to_l1_commitment = poseidon_hash_span(l2_to_l1_hashes.span());
+                let l1_to_l2_commitment = poseidon_hash_span(*tee_input.l1_to_l2_msg_hashes);
+                let expected_messages_commitment = poseidon_hash_span(
+                    array![l2_to_l1_commitment, l1_to_l2_commitment].span(),
+                );
+                assert!(expected_messages_commitment == *tee_input.messages_commitment);
+
                 true
             },
         }
@@ -168,9 +209,9 @@ pub trait PiltoverInputTrait {
         Span<MessageToStarknet>, Span<MessageToAppchain>,
     ) {
         match self {
-            // TEE proofs do not carry L1<->L2 message data; messaging is not supported in
-            // this mode.
-            PiltoverInput::TeeInput(_) => (array![].span(), array![].span()),
+            PiltoverInput::TeeInput(tee_input) => {
+                (*tee_input.messages_to_starknet, *tee_input.messages_to_appchain)
+            },
             PiltoverInput::LayoutBridgeOutputNoDa(lb_output) => {
                 let snos = deserialize_layout_bridge_output(*lb_output)
                     .bootloader_output
