@@ -6,9 +6,7 @@
 //! intact, with no on-chain verification of the underlying SP1 Groth16 proof
 //! or AMD attestation report.
 
-use amd_tee_registry::tee_registry::{
-    IAMDTeeRegistryDispatcher, IAMDTeeRegistryDispatcherTrait,
-};
+use amd_tee_registry::tee_registry::{IAMDTeeRegistryDispatcher, IAMDTeeRegistryDispatcherTrait};
 use amd_tee_registry::tee_types::{VerificationResult, VerifierJournal};
 use snforge_std as snf;
 use snforge_std::ContractClassTrait;
