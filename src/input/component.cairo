@@ -133,12 +133,9 @@ pub trait PiltoverInputTrait {
                 };
                 let commitment = poseidon_hash_span(
                     array![
-                        *tee_input.prev_state_root,
-                        *tee_input.state_root,
-                        *tee_input.prev_block_hash,
-                        *tee_input.block_hash,
-                        *tee_input.prev_block_number,
-                        *tee_input.block_number,
+                        *tee_input.prev_state_root, *tee_input.state_root,
+                        *tee_input.prev_block_hash, *tee_input.block_hash,
+                        *tee_input.prev_block_number, *tee_input.block_number,
                         *tee_input.messages_commitment,
                     ]
                         .span(),
@@ -164,8 +161,7 @@ pub trait PiltoverInputTrait {
                         .append(
                             poseidon_hash_span(
                                 array![
-                                    (*msg.from_address).into(),
-                                    (*msg.to_address).into(),
+                                    (*msg.from_address).into(), (*msg.to_address).into(),
                                     payload_hash,
                                 ]
                                     .span(),

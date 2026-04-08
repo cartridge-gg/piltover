@@ -7,7 +7,7 @@ edition = "2024_07"
 starknet = "2.13.1"
 openzeppelin = "0.20.0"
 integrity = "2.0.0"
-amd_tee_registry = { git = "https://github.com/chudkowsky/katana-tee" }
+amd_tee_registry = { git = "https://github.com/cartridge-gg/katana-tee", rev = "56aa752d2e73e505c356c80b7a00eddd27d4d263" }
 
 [dev-dependencies]
 starknet = "2.13.1"
