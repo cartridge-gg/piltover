@@ -3,6 +3,7 @@ pub mod fact_registry;
 pub mod interface;
 pub mod input {
     pub mod component;
+    pub mod katana_tee_config;
     pub mod layout_bridge;
     pub mod mock_amd_tee_registry;
     pub mod snos_output;

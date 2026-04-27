@@ -15,5 +15,10 @@ pub struct TEEInput {
     /// keccak256 hashes (as felts) of each L1→L2 message, used to reconstruct
     /// `l1_to_l2_commitment` without recomputing keccak inside the contract.
     pub l1_to_l2_msg_hashes: Span<felt252>,
+    /// Versioned environment config hash bound into the v1 `report_data`.
+    /// Recomputed on-chain from Piltover config (chain id + fee token) and
+    /// asserted to equal this field, so attestations from a different
+    /// appchain configuration are rejected.
+    pub katana_tee_config_hash: felt252,
 }
 

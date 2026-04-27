@@ -9,6 +9,7 @@ use integrity::Integrity;
 use piltover::input::snos_output::{MessageToAppchain, MessageToStarknet};
 use starknet::ContractAddress;
 use crate::config::ProgramInfo;
+use super::katana_tee_config::{KATANA_TEE_APPCHAIN_MODE, KATANA_TEE_REPORT_VERSION};
 use super::layout_bridge::{DaLayerInfo, StateUpdateInput, deserialize_layout_bridge_output};
 use super::tee_input::TEEInput;
 
@@ -23,6 +24,11 @@ mod errors {
     pub const NO_FACT_REGISTERED: felt252 = 'no fact registered';
     pub const LAYOUT_BRIDGE_INVALID_PROGRAM_HASH: felt252 = 'lb: invalid program hash';
     pub const LAYOUT_BRIDGE_INVALID_BOOTLOADER_HASH: felt252 = 'lb: invalid bootloader hash';
+    pub const TEE_INVALID_CONFIG_HASH: felt252 = 'tee: invalid config hash';
+    pub const TEE_REPORT_DATA_MISMATCH: felt252 = 'tee: report data mismatch';
+    pub const TEE_CONFIG_HASH_HALF_MISMATCH: felt252 = 'tee: config hash half mismatch';
+    pub const TEE_INVALID_MESSAGES: felt252 = 'tee: invalid messages';
+    pub const TEE_SP1_PROOF_FAILED: felt252 = 'tee: sp1 proof failed';
 }
 
 /// The minimum security bits required for a fact to be considered valid.
@@ -95,12 +101,16 @@ pub trait PiltoverInputTrait {
     ///
     /// For `LayoutBridgeOutput*` variants, `fact_registry_address` must point to an Integrity
     /// fact registry contract, and `program_info` is used to verify program hashes.
+    /// `expected_katana_tee_config_hash` is unused on these variants.
     ///
     /// For `TeeInput`, `fact_registry_address` must point to an `IAMDTeeRegistry` contract
-    /// instead. `program_info` is not used — TEE validation is based solely on the SP1 proof
-    /// and the AMD attestation report embedded in its journal.
+    /// and `expected_katana_tee_config_hash` must be the v1 config hash recomputed from
+    /// the Piltover config (chain id + fee token). `program_info` is unused on this variant.
     fn validate_input(
-        self: @PiltoverInput, program_info: ProgramInfo, fact_registry_address: ContractAddress,
+        self: @PiltoverInput,
+        program_info: ProgramInfo,
+        fact_registry_address: ContractAddress,
+        expected_katana_tee_config_hash: felt252,
     ) -> bool {
         match self {
             PiltoverInput::LayoutBridgeOutputNoDa(lb_output) => {
@@ -110,9 +120,16 @@ pub trait PiltoverInputTrait {
                 lb_output, _,
             )) => { validate_lb_output(*lb_output, program_info, fact_registry_address) },
             PiltoverInput::TeeInput(tee_input) => {
-                // For TEE, fact_registry_address must be the IAMDTeeRegistry contract.
-                // The SP1 proof is submitted to it for verification; the registry returns a
-                // journal containing the AMD attestation report and a verification result.
+                // 1. Environment binding: the attested config hash must match the
+                //    Piltover-side expected hash (recomputed from chain id + fee token).
+                //    Rejects attestations from any other appchain configuration.
+                assert!(
+                    *tee_input.katana_tee_config_hash == expected_katana_tee_config_hash,
+                    "{}",
+                    errors::TEE_INVALID_CONFIG_HASH,
+                );
+
+                // 2. SP1 proof verification + raw report extraction.
                 let registry = IAMDTeeRegistryDispatcher {
                     contract_address: fact_registry_address,
                 };
@@ -120,32 +137,61 @@ pub trait PiltoverInputTrait {
                 let journal = registry.verify_sp1_proof(sp1_proof.into()).unwrap();
                 let raw_report = RawAttestationReport { raw: journal.raw_report };
                 let report_data = raw_report.report_data();
-                // report_data is a 256-bit field split across four u64 limbs (limb0..limb3).
-                // The commitment is a felt252 (< 252 bits), so the upper two limbs must be zero.
-                assert!(report_data.limb2 == 0);
-                assert!(report_data.limb3 == 0);
-                // The TEE attests to a commitment of (block_number, block_hash, state_root).
-                // The report_data bytes are big-endian, so limb0 is the most-significant chunk;
-                // each limb is byte-reversed to convert from big-endian to little-endian felt252.
-                let expected_commitment = u256 {
+
+                // 3. Decode `report_data` (u512) as two big-endian 32-byte halves.
+                //    First half = v1 commitment (felt252).
+                //    Second half = config hash (felt252), exposed for direct inspection.
+                //    Each 32-byte half is two u128 limbs in big-endian order; byte-reversing
+                //    each limb converts to little-endian for u256 / felt252 comparison.
+                let attested_commitment = u256 {
                     low: u128_byte_reverse(report_data.limb1),
                     high: u128_byte_reverse(report_data.limb0),
                 };
+                let attested_config_hash = u256 {
+                    low: u128_byte_reverse(report_data.limb3),
+                    high: u128_byte_reverse(report_data.limb2),
+                };
+
+                // 4. Second-half config hash must equal the input config hash.
+                //    Catches the failure mode where someone attests to a different config
+                //    in the second half but constructs a matching first-half commitment.
+                assert!(
+                    attested_config_hash == (*tee_input.katana_tee_config_hash).into(),
+                    "{}",
+                    errors::TEE_CONFIG_HASH_HALF_MISMATCH,
+                );
+
+                // 5. Recompute the v1 commitment from the input fields and assert it matches
+                //    the attested first half. v1 schema:
+                //      Poseidon([
+                //        KATANA_TEE_REPORT_VERSION,
+                //        KATANA_TEE_APPCHAIN_MODE,
+                //        prev_state_root, state_root,
+                //        prev_block_hash, block_hash,
+                //        prev_block_number, block_number,
+                //        messages_commitment,
+                //        katana_tee_config_hash,
+                //      ])
                 let commitment = poseidon_hash_span(
                     array![
+                        KATANA_TEE_REPORT_VERSION, KATANA_TEE_APPCHAIN_MODE,
                         *tee_input.prev_state_root, *tee_input.state_root,
                         *tee_input.prev_block_hash, *tee_input.block_hash,
                         *tee_input.prev_block_number, *tee_input.block_number,
-                        *tee_input.messages_commitment,
+                        *tee_input.messages_commitment, *tee_input.katana_tee_config_hash,
                     ]
                         .span(),
                 );
-                assert!(expected_commitment == commitment.into());
+                assert!(
+                    attested_commitment == commitment.into(),
+                    "{}",
+                    errors::TEE_REPORT_DATA_MISMATCH,
+                );
 
-                assert!(journal.result == Success);
+                assert!(journal.result == Success, "{}", errors::TEE_SP1_PROOF_FAILED);
 
-                // Verify messages_commitment matches the provided message data.
-                // l2_to_l1: recompute Poseidon hash for each MessageToStarknet.
+                // 6. Verify messages_commitment matches the provided message data.
+                //    l2_to_l1: recompute Poseidon hash for each MessageToStarknet.
                 let mut l2_to_l1_hashes: Array<felt252> = array![];
                 for msg in *tee_input.messages_to_starknet {
                     let payload_hash = poseidon_hash_span(
@@ -173,7 +219,11 @@ pub trait PiltoverInputTrait {
                 let expected_messages_commitment = poseidon_hash_span(
                     array![l2_to_l1_commitment, l1_to_l2_commitment].span(),
                 );
-                assert!(expected_messages_commitment == *tee_input.messages_commitment);
+                assert!(
+                    expected_messages_commitment == *tee_input.messages_commitment,
+                    "{}",
+                    errors::TEE_INVALID_MESSAGES,
+                );
 
                 true
             },
