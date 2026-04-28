@@ -24,6 +24,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: asdf-vm/actions/install@v3.0.2
+        with:
+          asdf_branch: v0.14.1
       - run: scarb fmt --check
 
   test:
@@ -31,6 +33,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: asdf-vm/actions/install@v3.0.2
+        with:
+          asdf_branch: v0.14.1
       - run: scarb test --all-features
 
   rust_bindings:
@@ -43,6 +47,8 @@ jobs:
           toolchain: nightly-2024-08-28
           components: rustfmt
       - uses: asdf-vm/actions/install@v3.0.2
+        with:
+          asdf_branch: v0.14.1
       - name: Generate bindings
         run: bash scripts/generate_bindings.sh
       - name: Check for changes
