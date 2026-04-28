@@ -103,6 +103,40 @@ impl cainome::cairo_serde::CairoSerde for DaLayerInfo {
     }
 }
 #[derive()]
+pub struct KatanaTeeProgramInfo {
+    pub katana_tee_config_hash: starknet::core::types::Felt,
+}
+impl cainome::cairo_serde::CairoSerde for KatanaTeeProgramInfo {
+    type RustType = Self;
+    const SERIALIZED_SIZE: std::option::Option<usize> = None;
+    #[inline]
+    fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
+        let mut __size = 0;
+        __size +=
+            starknet::core::types::Felt::cairo_serialized_size(&__rust.katana_tee_config_hash);
+        __size
+    }
+    fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
+        let mut __out: Vec<starknet::core::types::Felt> = vec![];
+        __out.extend(starknet::core::types::Felt::cairo_serialize(
+            &__rust.katana_tee_config_hash,
+        ));
+        __out
+    }
+    fn cairo_deserialize(
+        __felts: &[starknet::core::types::Felt],
+        __offset: usize,
+    ) -> cainome::cairo_serde::Result<Self::RustType> {
+        let mut __offset = __offset;
+        let katana_tee_config_hash =
+            starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&katana_tee_config_hash);
+        Ok(KatanaTeeProgramInfo {
+            katana_tee_config_hash,
+        })
+    }
+}
+#[derive()]
 pub struct LogStateTransitionFact {
     pub state_transition_fact: cainome::cairo_serde::U256,
 }
@@ -939,66 +973,6 @@ impl OwnershipTransferred {
     }
 }
 #[derive()]
-pub struct ProgramInfo {
-    pub bootloader_program_hash: starknet::core::types::Felt,
-    pub snos_config_hash: starknet::core::types::Felt,
-    pub snos_program_hash: starknet::core::types::Felt,
-    pub layout_bridge_program_hash: starknet::core::types::Felt,
-}
-impl cainome::cairo_serde::CairoSerde for ProgramInfo {
-    type RustType = Self;
-    const SERIALIZED_SIZE: std::option::Option<usize> = None;
-    #[inline]
-    fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
-        let mut __size = 0;
-        __size +=
-            starknet::core::types::Felt::cairo_serialized_size(&__rust.bootloader_program_hash);
-        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.snos_config_hash);
-        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.snos_program_hash);
-        __size +=
-            starknet::core::types::Felt::cairo_serialized_size(&__rust.layout_bridge_program_hash);
-        __size
-    }
-    fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
-        let mut __out: Vec<starknet::core::types::Felt> = vec![];
-        __out.extend(starknet::core::types::Felt::cairo_serialize(
-            &__rust.bootloader_program_hash,
-        ));
-        __out.extend(starknet::core::types::Felt::cairo_serialize(
-            &__rust.snos_config_hash,
-        ));
-        __out.extend(starknet::core::types::Felt::cairo_serialize(
-            &__rust.snos_program_hash,
-        ));
-        __out.extend(starknet::core::types::Felt::cairo_serialize(
-            &__rust.layout_bridge_program_hash,
-        ));
-        __out
-    }
-    fn cairo_deserialize(
-        __felts: &[starknet::core::types::Felt],
-        __offset: usize,
-    ) -> cainome::cairo_serde::Result<Self::RustType> {
-        let mut __offset = __offset;
-        let bootloader_program_hash =
-            starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
-        __offset += starknet::core::types::Felt::cairo_serialized_size(&bootloader_program_hash);
-        let snos_config_hash = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
-        __offset += starknet::core::types::Felt::cairo_serialized_size(&snos_config_hash);
-        let snos_program_hash = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
-        __offset += starknet::core::types::Felt::cairo_serialized_size(&snos_program_hash);
-        let layout_bridge_program_hash =
-            starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
-        __offset += starknet::core::types::Felt::cairo_serialized_size(&layout_bridge_program_hash);
-        Ok(ProgramInfo {
-            bootloader_program_hash,
-            snos_config_hash,
-            snos_program_hash,
-            layout_bridge_program_hash,
-        })
-    }
-}
-#[derive()]
 pub struct ProgramInfoChanged {
     pub changed_by: cainome::cairo_serde::ContractAddress,
     pub old_program_info: ProgramInfo,
@@ -1052,6 +1026,66 @@ impl ProgramInfoChanged {
     }
 }
 #[derive()]
+pub struct StarknetOsProgramInfo {
+    pub bootloader_program_hash: starknet::core::types::Felt,
+    pub snos_config_hash: starknet::core::types::Felt,
+    pub snos_program_hash: starknet::core::types::Felt,
+    pub layout_bridge_program_hash: starknet::core::types::Felt,
+}
+impl cainome::cairo_serde::CairoSerde for StarknetOsProgramInfo {
+    type RustType = Self;
+    const SERIALIZED_SIZE: std::option::Option<usize> = None;
+    #[inline]
+    fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
+        let mut __size = 0;
+        __size +=
+            starknet::core::types::Felt::cairo_serialized_size(&__rust.bootloader_program_hash);
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.snos_config_hash);
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.snos_program_hash);
+        __size +=
+            starknet::core::types::Felt::cairo_serialized_size(&__rust.layout_bridge_program_hash);
+        __size
+    }
+    fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
+        let mut __out: Vec<starknet::core::types::Felt> = vec![];
+        __out.extend(starknet::core::types::Felt::cairo_serialize(
+            &__rust.bootloader_program_hash,
+        ));
+        __out.extend(starknet::core::types::Felt::cairo_serialize(
+            &__rust.snos_config_hash,
+        ));
+        __out.extend(starknet::core::types::Felt::cairo_serialize(
+            &__rust.snos_program_hash,
+        ));
+        __out.extend(starknet::core::types::Felt::cairo_serialize(
+            &__rust.layout_bridge_program_hash,
+        ));
+        __out
+    }
+    fn cairo_deserialize(
+        __felts: &[starknet::core::types::Felt],
+        __offset: usize,
+    ) -> cainome::cairo_serde::Result<Self::RustType> {
+        let mut __offset = __offset;
+        let bootloader_program_hash =
+            starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&bootloader_program_hash);
+        let snos_config_hash = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&snos_config_hash);
+        let snos_program_hash = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&snos_program_hash);
+        let layout_bridge_program_hash =
+            starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&layout_bridge_program_hash);
+        Ok(StarknetOsProgramInfo {
+            bootloader_program_hash,
+            snos_config_hash,
+            snos_program_hash,
+            layout_bridge_program_hash,
+        })
+    }
+}
+#[derive()]
 pub struct TEEInput {
     pub sp1_proof: Vec<starknet::core::types::Felt>,
     pub prev_state_root: starknet::core::types::Felt,
@@ -1064,6 +1098,7 @@ pub struct TEEInput {
     pub messages_to_starknet: Vec<MessageToStarknet>,
     pub messages_to_appchain: Vec<MessageToAppchain>,
     pub l1_to_l2_msg_hashes: Vec<starknet::core::types::Felt>,
+    pub katana_tee_config_hash: starknet::core::types::Felt,
 }
 impl cainome::cairo_serde::CairoSerde for TEEInput {
     type RustType = Self;
@@ -1083,6 +1118,8 @@ impl cainome::cairo_serde::CairoSerde for TEEInput {
         __size += Vec::<MessageToAppchain>::cairo_serialized_size(&__rust.messages_to_appchain);
         __size +=
             Vec::<starknet::core::types::Felt>::cairo_serialized_size(&__rust.l1_to_l2_msg_hashes);
+        __size +=
+            starknet::core::types::Felt::cairo_serialized_size(&__rust.katana_tee_config_hash);
         __size
     }
     fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
@@ -1120,6 +1157,9 @@ impl cainome::cairo_serde::CairoSerde for TEEInput {
         __out.extend(Vec::<starknet::core::types::Felt>::cairo_serialize(
             &__rust.l1_to_l2_msg_hashes,
         ));
+        __out.extend(starknet::core::types::Felt::cairo_serialize(
+            &__rust.katana_tee_config_hash,
+        ));
         __out
     }
     fn cairo_deserialize(
@@ -1151,6 +1191,9 @@ impl cainome::cairo_serde::CairoSerde for TEEInput {
         let l1_to_l2_msg_hashes =
             Vec::<starknet::core::types::Felt>::cairo_deserialize(__felts, __offset)?;
         __offset += Vec::<starknet::core::types::Felt>::cairo_serialized_size(&l1_to_l2_msg_hashes);
+        let katana_tee_config_hash =
+            starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&katana_tee_config_hash);
         Ok(TEEInput {
             sp1_proof,
             prev_state_root,
@@ -1163,6 +1206,7 @@ impl cainome::cairo_serde::CairoSerde for TEEInput {
             messages_to_starknet,
             messages_to_appchain,
             l1_to_l2_msg_hashes,
+            katana_tee_config_hash,
         })
     }
 }
@@ -4674,6 +4718,61 @@ impl cainome::cairo_serde::CairoSerde for PiltoverInput {
                 return Err(cainome::cairo_serde::Error::Deserialize(format!(
                     "Index not handle for enum {}",
                     "PiltoverInput"
+                )))
+            }
+        }
+    }
+}
+#[derive()]
+pub enum ProgramInfo {
+    StarknetOs(StarknetOsProgramInfo),
+    KatanaTee(KatanaTeeProgramInfo),
+}
+impl cainome::cairo_serde::CairoSerde for ProgramInfo {
+    type RustType = Self;
+    const SERIALIZED_SIZE: std::option::Option<usize> = std::option::Option::None;
+    #[inline]
+    fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
+        match __rust {
+            ProgramInfo::StarknetOs(val) => StarknetOsProgramInfo::cairo_serialized_size(val) + 1,
+            ProgramInfo::KatanaTee(val) => KatanaTeeProgramInfo::cairo_serialized_size(val) + 1,
+            _ => 0,
+        }
+    }
+    fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
+        match __rust {
+            ProgramInfo::StarknetOs(val) => {
+                let mut temp = vec![];
+                temp.extend(usize::cairo_serialize(&0usize));
+                temp.extend(StarknetOsProgramInfo::cairo_serialize(val));
+                temp
+            }
+            ProgramInfo::KatanaTee(val) => {
+                let mut temp = vec![];
+                temp.extend(usize::cairo_serialize(&1usize));
+                temp.extend(KatanaTeeProgramInfo::cairo_serialize(val));
+                temp
+            }
+            _ => vec![],
+        }
+    }
+    fn cairo_deserialize(
+        __felts: &[starknet::core::types::Felt],
+        __offset: usize,
+    ) -> cainome::cairo_serde::Result<Self::RustType> {
+        let __f = __felts[__offset];
+        let __index = u128::from_be_bytes(__f.to_bytes_be()[16..].try_into().unwrap());
+        match __index as usize {
+            0usize => Ok(ProgramInfo::StarknetOs(
+                StarknetOsProgramInfo::cairo_deserialize(__felts, __offset + 1)?,
+            )),
+            1usize => Ok(ProgramInfo::KatanaTee(
+                KatanaTeeProgramInfo::cairo_deserialize(__felts, __offset + 1)?,
+            )),
+            _ => {
+                return Err(cainome::cairo_serde::Error::Deserialize(format!(
+                    "Index not handle for enum {}",
+                    "ProgramInfo"
                 )))
             }
         }
