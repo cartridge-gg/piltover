@@ -14,6 +14,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: asdf-vm/actions/install@v3.0.2
+        with:
+          asdf_branch: v0.14.1
       - run: scarb build
 
   all_features:
@@ -21,6 +23,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: asdf-vm/actions/install@v3.0.2
+        with:
+          asdf_branch: v0.14.1
       - run: scarb build --all-features
 
   rust:
