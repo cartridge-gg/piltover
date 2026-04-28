@@ -3,6 +3,7 @@ pub mod fact_registry;
 pub mod interface;
 pub mod input {
     pub mod component;
+    pub mod katana_tee_config;
     pub mod layout_bridge;
     pub mod mock_amd_tee_registry;
     pub mod snos_output;
@@ -16,7 +17,10 @@ pub mod config {
     pub mod mock;
 
     pub use component::config_cpt;
-    pub use interface::{IConfig, IConfigDispatcher, IConfigDispatcherTrait, ProgramInfo};
+    pub use interface::{
+        IConfig, IConfigDispatcher, IConfigDispatcherTrait, KatanaTeeProgramInfo, ProgramInfo,
+        StarknetOsProgramInfo,
+    };
     pub use mock::config_mock;
 
     #[cfg(target: 'test')]
