@@ -1,5 +1,8 @@
 use piltover::config::tests::constants as c;
-use piltover::config::{IConfigDispatcher, IConfigDispatcherTrait, ProgramInfo};
+use piltover::config::{
+    IConfigDispatcher, IConfigDispatcherTrait, KatanaTeeProgramInfo, ProgramInfo,
+    StarknetOsProgramInfo,
+};
 use snforge_std as snf;
 use snforge_std::ContractClassTrait;
 
@@ -87,14 +90,14 @@ fn config_set_program_info_ok() {
     snf::start_cheat_caller_address(mock.contract_address, c::OWNER);
 
     // Owner sets the info.
-    let program_info = ProgramInfo {
-        bootloader_program_hash: 0x1,
-        snos_config_hash: 0x2,
-        snos_program_hash: 0x3,
-        layout_bridge_program_hash: 0x4,
-        chain_id: 'KATANA',
-        fee_token_address: 0xfee.try_into().unwrap(),
-    };
+    let program_info = ProgramInfo::StarknetOs(
+        StarknetOsProgramInfo {
+            bootloader_program_hash: 0x1,
+            snos_config_hash: 0x2,
+            snos_program_hash: 0x3,
+            layout_bridge_program_hash: 0x4,
+        },
+    );
     mock.set_program_info(program_info);
     assert(mock.get_program_info() == program_info, 'expect correct hashes');
 
@@ -102,17 +105,30 @@ fn config_set_program_info_ok() {
 
     // Operator can also set the program info.
     snf::start_cheat_caller_address(mock.contract_address, c::OPERATOR);
-    let program_info = ProgramInfo {
-        bootloader_program_hash: 0x11,
-        snos_config_hash: 0x22,
-        snos_program_hash: 0x33,
-        layout_bridge_program_hash: 0x44,
-        chain_id: 'SN_SEPOLIA',
-        fee_token_address: 0xfee2.try_into().unwrap(),
-    };
+    let program_info = ProgramInfo::StarknetOs(
+        StarknetOsProgramInfo {
+            bootloader_program_hash: 0x11,
+            snos_config_hash: 0x22,
+            snos_program_hash: 0x33,
+            layout_bridge_program_hash: 0x44,
+        },
+    );
     mock.set_program_info(program_info);
 
     assert(mock.get_program_info() == program_info, 'expect operator hashes');
+}
+
+#[test]
+fn config_set_program_info_katana_tee_variant_ok() {
+    let mock = deploy_mock();
+
+    snf::start_cheat_caller_address(mock.contract_address, c::OWNER);
+
+    let program_info = ProgramInfo::KatanaTee(
+        KatanaTeeProgramInfo { katana_tee_config_hash: 0xabc },
+    );
+    mock.set_program_info(program_info);
+    assert(mock.get_program_info() == program_info, 'expect tee variant roundtrip');
 }
 
 #[test]
@@ -123,14 +139,14 @@ fn config_set_program_info_unauthorized() {
     snf::start_cheat_caller_address(mock.contract_address, c::OPERATOR);
     mock
         .set_program_info(
-            ProgramInfo {
-                bootloader_program_hash: 0x1,
-                snos_config_hash: 0x2,
-                snos_program_hash: 0x3,
-                layout_bridge_program_hash: 0x4,
-                chain_id: 'KATANA',
-                fee_token_address: 0xfee.try_into().unwrap(),
-            },
+            ProgramInfo::StarknetOs(
+                StarknetOsProgramInfo {
+                    bootloader_program_hash: 0x1,
+                    snos_config_hash: 0x2,
+                    snos_program_hash: 0x3,
+                    layout_bridge_program_hash: 0x4,
+                },
+            ),
         );
 }
 

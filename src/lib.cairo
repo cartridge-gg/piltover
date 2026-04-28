@@ -17,7 +17,10 @@ pub mod config {
     pub mod mock;
 
     pub use component::config_cpt;
-    pub use interface::{IConfig, IConfigDispatcher, IConfigDispatcherTrait, ProgramInfo};
+    pub use interface::{
+        IConfig, IConfigDispatcher, IConfigDispatcherTrait, KatanaTeeProgramInfo, ProgramInfo,
+        StarknetOsProgramInfo,
+    };
     pub use mock::config_mock;
 
     #[cfg(target: 'test')]

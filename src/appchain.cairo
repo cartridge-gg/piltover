@@ -27,7 +27,6 @@ pub mod appchain {
     use starknet::storage::StoragePointerReadAccess;
     use starknet::{ClassHash, ContractAddress};
     use crate::input::component::{PiltoverInput, PiltoverInputTrait};
-    use crate::input::katana_tee_config::compute_katana_tee_config_hash;
 
     /// The default cancellation delay of 5 days.
     const CANCELLATION_DELAY_SECS: u64 = 432000;
@@ -143,17 +142,9 @@ pub mod appchain {
             self.config.assert_only_owner_or_operator();
 
             let program_info = self.config.program_info.read();
-            let expected_katana_tee_config_hash = compute_katana_tee_config_hash(
-                program_info.chain_id, program_info.fee_token_address,
-            );
 
             assert!(
-                piltover_input
-                    .validate_input(
-                        program_info,
-                        self.config.get_facts_registry(),
-                        expected_katana_tee_config_hash,
-                    ),
+                piltover_input.validate_input(program_info, self.config.get_facts_registry()),
                 "Input validation failed",
             );
 

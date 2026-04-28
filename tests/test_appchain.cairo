@@ -7,7 +7,10 @@ use piltover::appchain::appchain::{Event, LogStateTransitionFact, LogStateUpdate
 //! Appchain testing.
 //!
 use piltover::config::tests::constants as c;
-use piltover::config::{IConfigDispatcher, IConfigDispatcherTrait, ProgramInfo};
+use piltover::config::{
+    IConfigDispatcher, IConfigDispatcherTrait, KatanaTeeProgramInfo, ProgramInfo,
+    StarknetOsProgramInfo,
+};
 use piltover::fact_registry::IFactRegistryDispatcher;
 use piltover::input::snos_output::{StarknetOsOutput, deserialize_os_output};
 use piltover::interface::{IAppchainDispatcher, IAppchainDispatcherTrait};
@@ -186,14 +189,14 @@ fn appchain_owner_ok() {
     snf::start_cheat_caller_address(appchain.contract_address, c::OWNER);
     iconfig
         .set_program_info(
-            ProgramInfo {
-                bootloader_program_hash: 0x11,
-                snos_config_hash: 0x22,
-                snos_program_hash: 0x33,
-                layout_bridge_program_hash: 0x44,
-                chain_id: 'KATANA',
-                fee_token_address: 0xfee.try_into().unwrap(),
-            },
+            ProgramInfo::StarknetOs(
+                StarknetOsProgramInfo {
+                    bootloader_program_hash: 0x11,
+                    snos_config_hash: 0x22,
+                    snos_program_hash: 0x33,
+                    layout_bridge_program_hash: 0x44,
+                },
+            ),
         );
 }
 
@@ -205,14 +208,14 @@ fn appchain_owner_only() {
     let iconfig = IConfigDispatcher { contract_address: appchain.contract_address };
     iconfig
         .set_program_info(
-            ProgramInfo {
-                bootloader_program_hash: 0x11,
-                snos_config_hash: 0x22,
-                snos_program_hash: 0x33,
-                layout_bridge_program_hash: 0x44,
-                chain_id: 'KATANA',
-                fee_token_address: 0xfee.try_into().unwrap(),
-            },
+            ProgramInfo::StarknetOs(
+                StarknetOsProgramInfo {
+                    bootloader_program_hash: 0x11,
+                    snos_config_hash: 0x22,
+                    snos_program_hash: 0x33,
+                    layout_bridge_program_hash: 0x44,
+                },
+            ),
         );
 }
 
@@ -254,23 +257,25 @@ fn setup_for_update_state(
     (appchain, imsg)
 }
 
-fn correct_program_info() -> ProgramInfo {
-    ProgramInfo {
+fn correct_starknet_os_program_info() -> StarknetOsProgramInfo {
+    StarknetOsProgramInfo {
         bootloader_program_hash: 'bootloader_hash',
         snos_config_hash: 8868593919264901768958912247765226517850727970326290266005120699201631282,
         snos_program_hash: 'snos_hash',
         layout_bridge_program_hash: 'layout_bridge_hash',
-        chain_id: 'KATANA',
-        fee_token_address: 0xfee.try_into().unwrap(),
     }
+}
+
+fn correct_program_info() -> ProgramInfo {
+    ProgramInfo::StarknetOs(correct_starknet_os_program_info())
 }
 
 #[test]
 #[should_panic(expected: ('snos: invalid program hash',))]
 fn update_state_invalid_snos_program_hash() {
-    let mut info = correct_program_info();
+    let mut info = correct_starknet_os_program_info();
     info.snos_program_hash = 'wrong_snos_hash';
-    let (appchain, _) = setup_for_update_state(info);
+    let (appchain, _) = setup_for_update_state(ProgramInfo::StarknetOs(info));
     let piltover_input = piltover::input::component::PiltoverInput::LayoutBridgeOutputNoDa(
         get_output(),
     );
@@ -280,9 +285,9 @@ fn update_state_invalid_snos_program_hash() {
 #[test]
 #[should_panic(expected: ('lb: invalid program hash',))]
 fn update_state_invalid_layout_bridge_hash() {
-    let mut info = correct_program_info();
+    let mut info = correct_starknet_os_program_info();
     info.layout_bridge_program_hash = 'wrong_lb_hash';
-    let (appchain, _) = setup_for_update_state(info);
+    let (appchain, _) = setup_for_update_state(ProgramInfo::StarknetOs(info));
     let piltover_input = piltover::input::component::PiltoverInput::LayoutBridgeOutputNoDa(
         get_output(),
     );
@@ -292,9 +297,9 @@ fn update_state_invalid_layout_bridge_hash() {
 #[test]
 #[should_panic(expected: ('lb: invalid bootloader hash',))]
 fn update_state_invalid_bootloader_hash() {
-    let mut info = correct_program_info();
+    let mut info = correct_starknet_os_program_info();
     info.bootloader_program_hash = 'wrong_bootloader_hash';
-    let (appchain, _) = setup_for_update_state(info);
+    let (appchain, _) = setup_for_update_state(ProgramInfo::StarknetOs(info));
     let piltover_input = piltover::input::component::PiltoverInput::LayoutBridgeOutputNoDa(
         get_output(),
     );
@@ -304,9 +309,9 @@ fn update_state_invalid_bootloader_hash() {
 #[test]
 #[should_panic(expected: ('snos: invalid config hash',))]
 fn update_state_invalid_config_hash() {
-    let mut info = correct_program_info();
+    let mut info = correct_starknet_os_program_info();
     info.snos_config_hash = 'wrong_config_hash';
-    let (appchain, _) = setup_for_update_state(info);
+    let (appchain, _) = setup_for_update_state(ProgramInfo::StarknetOs(info));
     let piltover_input = piltover::input::component::PiltoverInput::LayoutBridgeOutputNoDa(
         get_output(),
     );
@@ -368,14 +373,14 @@ fn update_state_ok() {
     snf::start_cheat_caller_address(appchain.contract_address, c::OWNER);
     iconfig
         .set_program_info(
-            ProgramInfo {
-                bootloader_program_hash: 'bootloader_hash',
-                snos_config_hash: 8868593919264901768958912247765226517850727970326290266005120699201631282,
-                snos_program_hash: 'snos_hash',
-                layout_bridge_program_hash: 'layout_bridge_hash',
-                chain_id: 'KATANA',
-                fee_token_address: 0xfee.try_into().unwrap(),
-            },
+            ProgramInfo::StarknetOs(
+                StarknetOsProgramInfo {
+                    bootloader_program_hash: 'bootloader_hash',
+                    snos_config_hash: 8868593919264901768958912247765226517850727970326290266005120699201631282,
+                    snos_program_hash: 'snos_hash',
+                    layout_bridge_program_hash: 'layout_bridge_hash',
+                },
+            ),
         );
     iconfig.set_facts_registry(address: fact_registry_mock.contract_address);
     // The state update contains a message to appchain, therefore, before
@@ -415,4 +420,58 @@ fn update_state_ok() {
         );
     snf::start_cheat_caller_address(appchain.contract_address, contract_sn);
     imsg.consume_message_from_appchain(contract_appc, payload_appc_to_sn);
+}
+
+/// Submitting a `TeeInput` against a Piltover configured for `StarknetOs` settlement
+/// must panic with the mode-mismatch error before any AMDTEERegistry call is made.
+#[test]
+#[should_panic(expected: ('mode: tee needs KatanaTee cfg',))]
+fn update_state_tee_input_with_starknet_os_config_panics() {
+    let (appchain, _spy) = deploy_with_owner_and_state(
+        owner: c::OWNER, state_root: 0, block_number: 0, block_hash: 0,
+    );
+
+    let iconfig = IConfigDispatcher { contract_address: appchain.contract_address };
+    snf::start_cheat_caller_address(appchain.contract_address, c::OWNER);
+    iconfig.set_program_info(correct_program_info());
+
+    let tee_input = piltover::input::tee_input::TEEInput {
+        sp1_proof: array![].span(),
+        prev_state_root: 0,
+        state_root: 0,
+        prev_block_hash: 0,
+        block_hash: 0,
+        prev_block_number: 0,
+        block_number: 0,
+        messages_commitment: 0,
+        messages_to_starknet: array![].span(),
+        messages_to_appchain: array![].span(),
+        l1_to_l2_msg_hashes: array![].span(),
+        katana_tee_config_hash: 0,
+    };
+    let piltover_input = piltover::input::component::PiltoverInput::TeeInput(tee_input);
+
+    appchain.update_state(piltover_input);
+}
+
+/// Submitting a `LayoutBridgeOutput` against a Piltover configured for TEE settlement
+/// must panic with the mode-mismatch error before any fact-registry call is made.
+#[test]
+#[should_panic(expected: ('mode: lb needs StarknetOs cfg',))]
+fn update_state_lb_input_with_katana_tee_config_panics() {
+    let (appchain, _spy) = deploy_with_owner_and_state(
+        owner: c::OWNER, state_root: 0, block_number: 0, block_hash: 0,
+    );
+
+    let iconfig = IConfigDispatcher { contract_address: appchain.contract_address };
+    snf::start_cheat_caller_address(appchain.contract_address, c::OWNER);
+    iconfig
+        .set_program_info(
+            ProgramInfo::KatanaTee(KatanaTeeProgramInfo { katana_tee_config_hash: 0xabc }),
+        );
+
+    let piltover_input = piltover::input::component::PiltoverInput::LayoutBridgeOutputNoDa(
+        get_output(),
+    );
+    appchain.update_state(piltover_input);
 }

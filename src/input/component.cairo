@@ -8,7 +8,7 @@ use core::poseidon::poseidon_hash_span;
 use integrity::Integrity;
 use piltover::input::snos_output::{MessageToAppchain, MessageToStarknet};
 use starknet::ContractAddress;
-use crate::config::ProgramInfo;
+use crate::config::{KatanaTeeProgramInfo, ProgramInfo, StarknetOsProgramInfo};
 use super::katana_tee_config::{KATANA_TEE_APPCHAIN_MODE, KATANA_TEE_REPORT_VERSION};
 use super::layout_bridge::{DaLayerInfo, StateUpdateInput, deserialize_layout_bridge_output};
 use super::tee_input::TEEInput;
@@ -29,6 +29,8 @@ mod errors {
     pub const TEE_CONFIG_HASH_HALF_MISMATCH: felt252 = 'tee: config hash half mismatch';
     pub const TEE_INVALID_MESSAGES: felt252 = 'tee: invalid messages';
     pub const TEE_SP1_PROOF_FAILED: felt252 = 'tee: sp1 proof failed';
+    pub const MODE_MISMATCH_LB_REQUIRES_SNOS: felt252 = 'mode: lb needs StarknetOs cfg';
+    pub const MODE_MISMATCH_TEE_REQUIRES_KATANA_TEE: felt252 = 'mode: tee needs KatanaTee cfg';
 }
 
 /// The minimum security bits required for a fact to be considered valid.
@@ -56,27 +58,37 @@ fn lb_output_to_state_update_input(lb_output: Span<felt252>) -> StateUpdateInput
 fn validate_lb_output(
     lb_output: Span<felt252>, program_info: ProgramInfo, fact_registry_address: ContractAddress,
 ) -> bool {
+    let StarknetOsProgramInfo {
+        bootloader_program_hash, snos_config_hash, snos_program_hash, layout_bridge_program_hash,
+    } =
+        match program_info {
+            ProgramInfo::StarknetOs(info) => info,
+            ProgramInfo::KatanaTee(_) => core::panic_with_felt252(
+                errors::MODE_MISMATCH_LB_REQUIRES_SNOS,
+            ),
+        };
+
     let lb = deserialize_layout_bridge_output(lb_output);
     assert(
-        program_info.snos_program_hash == lb.bootloader_output.snos_program_hash,
+        snos_program_hash == lb.bootloader_output.snos_program_hash,
         errors::SNOS_INVALID_PROGRAM_HASH,
     );
     assert(
-        program_info.layout_bridge_program_hash == lb.layout_bridge_program_hash,
+        layout_bridge_program_hash == lb.layout_bridge_program_hash,
         errors::LAYOUT_BRIDGE_INVALID_PROGRAM_HASH,
     );
     assert(
-        program_info.bootloader_program_hash == lb.bootloader_program_hash,
+        bootloader_program_hash == lb.bootloader_program_hash,
         errors::LAYOUT_BRIDGE_INVALID_BOOTLOADER_HASH,
     );
     let program_output_struct = lb.bootloader_output.snos_output;
     assert(
-        program_output_struct.starknet_os_config_hash == program_info.snos_config_hash,
+        program_output_struct.starknet_os_config_hash == snos_config_hash,
         errors::SNOS_INVALID_CONFIG_HASH,
     );
 
     let output_hash = poseidon_hash_span(lb_output);
-    let fact = poseidon_hash_span(array![program_info.bootloader_program_hash, output_hash].span());
+    let fact = poseidon_hash_span(array![bootloader_program_hash, output_hash].span());
     let integrity = Integrity::from_address(fact_registry_address);
     assert(
         integrity.is_fact_hash_valid_with_security(fact, MIN_SECURITY_BITS),
@@ -99,18 +111,19 @@ pub trait PiltoverInputTrait {
     }
     /// Validates the input based on its type.
     ///
-    /// For `LayoutBridgeOutput*` variants, `fact_registry_address` must point to an Integrity
-    /// fact registry contract, and `program_info` is used to verify program hashes.
-    /// `expected_katana_tee_config_hash` is unused on these variants.
+    /// The `PiltoverInput` variant must agree with the active `ProgramInfo` variant:
+    /// `LayoutBridgeOutput*` requires `ProgramInfo::StarknetOs`, `TeeInput` requires
+    /// `ProgramInfo::KatanaTee`. Cross-variant submission panics.
     ///
-    /// For `TeeInput`, `fact_registry_address` must point to an `IAMDTeeRegistry` contract
-    /// and `expected_katana_tee_config_hash` must be the v1 config hash recomputed from
-    /// the Piltover config (chain id + fee token). `program_info` is unused on this variant.
+    /// For `LayoutBridgeOutput*`, `fact_registry_address` must point to an Integrity
+    /// fact registry, and the `StarknetOs` program hashes are verified against the
+    /// bootloaded SNOS output.
+    ///
+    /// For `TeeInput`, `fact_registry_address` must point to an `IAMDTeeRegistry`
+    /// contract; the attested config hash is checked against the `KatanaTee` variant's
+    /// stored hash.
     fn validate_input(
-        self: @PiltoverInput,
-        program_info: ProgramInfo,
-        fact_registry_address: ContractAddress,
-        expected_katana_tee_config_hash: felt252,
+        self: @PiltoverInput, program_info: ProgramInfo, fact_registry_address: ContractAddress,
     ) -> bool {
         match self {
             PiltoverInput::LayoutBridgeOutputNoDa(lb_output) => {
@@ -120,11 +133,21 @@ pub trait PiltoverInputTrait {
                 lb_output, _,
             )) => { validate_lb_output(*lb_output, program_info, fact_registry_address) },
             PiltoverInput::TeeInput(tee_input) => {
+                let KatanaTeeProgramInfo {
+                    katana_tee_config_hash,
+                } =
+                    match program_info {
+                        ProgramInfo::KatanaTee(info) => info,
+                        ProgramInfo::StarknetOs(_) => core::panic_with_felt252(
+                            errors::MODE_MISMATCH_TEE_REQUIRES_KATANA_TEE,
+                        ),
+                    };
+
                 // 1. Environment binding: the attested config hash must match the
-                //    Piltover-side expected hash (recomputed from chain id + fee token).
-                //    Rejects attestations from any other appchain configuration.
+                //    Piltover-stored hash. Rejects attestations from any other
+                //    appchain configuration.
                 assert!(
-                    *tee_input.katana_tee_config_hash == expected_katana_tee_config_hash,
+                    *tee_input.katana_tee_config_hash == katana_tee_config_hash,
                     "{}",
                     errors::TEE_INVALID_CONFIG_HASH,
                 );
