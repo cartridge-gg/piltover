@@ -191,6 +191,8 @@ fn appchain_owner_ok() {
                 snos_config_hash: 0x22,
                 snos_program_hash: 0x33,
                 layout_bridge_program_hash: 0x44,
+                chain_id: 'KATANA',
+                fee_token_address: 0xfee.try_into().unwrap(),
             },
         );
 }
@@ -208,6 +210,8 @@ fn appchain_owner_only() {
                 snos_config_hash: 0x22,
                 snos_program_hash: 0x33,
                 layout_bridge_program_hash: 0x44,
+                chain_id: 'KATANA',
+                fee_token_address: 0xfee.try_into().unwrap(),
             },
         );
 }
@@ -256,6 +260,8 @@ fn correct_program_info() -> ProgramInfo {
         snos_config_hash: 8868593919264901768958912247765226517850727970326290266005120699201631282,
         snos_program_hash: 'snos_hash',
         layout_bridge_program_hash: 'layout_bridge_hash',
+        chain_id: 'KATANA',
+        fee_token_address: 0xfee.try_into().unwrap(),
     }
 }
 
@@ -367,6 +373,8 @@ fn update_state_ok() {
                 snos_config_hash: 8868593919264901768958912247765226517850727970326290266005120699201631282,
                 snos_program_hash: 'snos_hash',
                 layout_bridge_program_hash: 'layout_bridge_hash',
+                chain_id: 'KATANA',
+                fee_token_address: 0xfee.try_into().unwrap(),
             },
         );
     iconfig.set_facts_registry(address: fact_registry_mock.contract_address);

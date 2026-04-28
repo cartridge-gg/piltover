@@ -144,7 +144,7 @@ pub mod appchain {
 
             let program_info = self.config.program_info.read();
             let expected_katana_tee_config_hash = compute_katana_tee_config_hash(
-                self.config.get_chain_id(), self.config.get_fee_token_address(),
+                program_info.chain_id, program_info.fee_token_address,
             );
 
             assert!(

@@ -31,16 +31,13 @@ pub mod config_cpt {
         /// Appchain operators that are allowed to update the state.
         pub operators: Map<ContractAddress, bool>,
         /// The information of the program verified to apply the state transition.
+        /// Also carries the chain id and STRK fee token address that feed the v1
+        /// Katana TEE config hash.
         pub program_info: ProgramInfo,
         /// Facts registry contract address.
         pub facts_registry: ContractAddress,
         /// Is KZG DA enabled.
         pub use_kzg_da: bool,
-        /// Appchain chain id; one input to the Katana TEE config hash.
-        pub chain_id: felt252,
-        /// Appchain non-legacy (STRK) fee token address; one input to the
-        /// Katana TEE config hash.
-        pub fee_token_address: ContractAddress,
     }
 
     #[event]
@@ -112,26 +109,6 @@ pub mod config_cpt {
 
         fn get_use_kzg_da(self: @ComponentState<TContractState>) -> bool {
             self.use_kzg_da.read()
-        }
-
-        fn set_chain_id(ref self: ComponentState<TContractState>, chain_id: felt252) {
-            self.assert_only_owner_or_operator();
-            self.chain_id.write(chain_id);
-        }
-
-        fn get_chain_id(self: @ComponentState<TContractState>) -> felt252 {
-            self.chain_id.read()
-        }
-
-        fn set_fee_token_address(
-            ref self: ComponentState<TContractState>, fee_token_address: ContractAddress,
-        ) {
-            self.assert_only_owner_or_operator();
-            self.fee_token_address.write(fee_token_address);
-        }
-
-        fn get_fee_token_address(self: @ComponentState<TContractState>) -> ContractAddress {
-            self.fee_token_address.read()
         }
     }
 

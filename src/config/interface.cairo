@@ -25,6 +25,13 @@ pub struct ProgramInfo {
     pub snos_program_hash: felt252,
     /// The hash of the Layout Bridge program.
     pub layout_bridge_program_hash: felt252,
+    /// The appchain chain id. One input to the v1 Katana TEE config hash;
+    /// must match the chain spec the Katana node runs against.
+    pub chain_id: felt252,
+    /// The appchain non-legacy (STRK) fee token address. The other input to
+    /// the v1 Katana TEE config hash; must match the fee token deployed on
+    /// the appchain.
+    pub fee_token_address: ContractAddress,
 }
 
 #[starknet::interface]
@@ -96,20 +103,4 @@ pub trait IConfig<T> {
     ///
     /// Whether KZG DA is enabled.
     fn get_use_kzg_da(self: @T) -> bool;
-
-    /// Sets the appchain chain id used to compute the Katana TEE config hash
-    /// bound into v1 attestations. Must match the chain spec the Katana node
-    /// runs against, otherwise TEE attestations will be rejected.
-    fn set_chain_id(ref self: T, chain_id: felt252);
-
-    /// Gets the appchain chain id.
-    fn get_chain_id(self: @T) -> felt252;
-
-    /// Sets the appchain fee token address (STRK / non-legacy fee token) used
-    /// to compute the Katana TEE config hash. Must match the fee token deployed
-    /// on the appchain.
-    fn set_fee_token_address(ref self: T, fee_token_address: ContractAddress);
-
-    /// Gets the appchain fee token address.
-    fn get_fee_token_address(self: @T) -> ContractAddress;
 }

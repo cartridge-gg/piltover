@@ -92,6 +92,8 @@ fn config_set_program_info_ok() {
         snos_config_hash: 0x2,
         snos_program_hash: 0x3,
         layout_bridge_program_hash: 0x4,
+        chain_id: 'KATANA',
+        fee_token_address: 0xfee.try_into().unwrap(),
     };
     mock.set_program_info(program_info);
     assert(mock.get_program_info() == program_info, 'expect correct hashes');
@@ -105,6 +107,8 @@ fn config_set_program_info_ok() {
         snos_config_hash: 0x22,
         snos_program_hash: 0x33,
         layout_bridge_program_hash: 0x44,
+        chain_id: 'SN_SEPOLIA',
+        fee_token_address: 0xfee2.try_into().unwrap(),
     };
     mock.set_program_info(program_info);
 
@@ -124,6 +128,8 @@ fn config_set_program_info_unauthorized() {
                 snos_config_hash: 0x2,
                 snos_program_hash: 0x3,
                 layout_bridge_program_hash: 0x4,
+                chain_id: 'KATANA',
+                fee_token_address: 0xfee.try_into().unwrap(),
             },
         );
 }
@@ -159,44 +165,4 @@ fn config_set_facts_registry_unauthorized() {
     // Other is not an operator.
     snf::start_cheat_caller_address(mock.contract_address, c::OTHER);
     mock.set_facts_registry(facts_registry_address);
-}
-
-#[test]
-fn config_set_chain_id_ok() {
-    let mock = deploy_mock();
-
-    snf::start_cheat_caller_address(mock.contract_address, c::OWNER);
-    assert(mock.get_chain_id() == 0, 'expect default 0');
-
-    mock.set_chain_id('KATANA');
-    assert(mock.get_chain_id() == 'KATANA', 'expect chain id set');
-}
-
-#[test]
-#[should_panic(expected: ('Config: not owner or operator',))]
-fn config_set_chain_id_unauthorized() {
-    let mock = deploy_mock();
-    snf::start_cheat_caller_address(mock.contract_address, c::OTHER);
-    mock.set_chain_id('KATANA');
-}
-
-#[test]
-fn config_set_fee_token_address_ok() {
-    let mock = deploy_mock();
-    let fee_token: starknet::ContractAddress = '0xabc'.try_into().unwrap();
-
-    snf::start_cheat_caller_address(mock.contract_address, c::OWNER);
-    assert(mock.get_fee_token_address() == 0.try_into().unwrap(), 'expect default 0');
-
-    mock.set_fee_token_address(fee_token);
-    assert(mock.get_fee_token_address() == fee_token, 'expect fee token set');
-}
-
-#[test]
-#[should_panic(expected: ('Config: not owner or operator',))]
-fn config_set_fee_token_address_unauthorized() {
-    let mock = deploy_mock();
-    let fee_token: starknet::ContractAddress = '0xabc'.try_into().unwrap();
-    snf::start_cheat_caller_address(mock.contract_address, c::OTHER);
-    mock.set_fee_token_address(fee_token);
 }
