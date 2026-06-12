@@ -26,6 +26,17 @@ Due to a limitation of `starknet foundry`, we can't declare a contract that is d
 
 - `messaging`: messaging between Appchain - Starknet.
 
+## Deployments
+
+### Mock AMD TEE registry
+
+A mock implementation of `amd_tee_registry::IAMDTeeRegistry` (see [`src/input/mock_amd_tee_registry.cairo`](src/input/mock_amd_tee_registry.cairo)) is deployed for exercising Piltover's TEE settlement path without real AMD SEV-SNP attestations or SP1 Groth16 proofs:
+
+| Network | Contract address |
+| --- | --- |
+| Starknet Sepolia | [`0x037189b1807f1358074b70b3dc8ab79167bbf72cff1296286052f6dfe31c8f15`](https://sepolia.voyager.online/contract/0x037189b1807f1358074b70b3dc8ab79167bbf72cff1296286052f6dfe31c8f15) |
+| Starknet Mainnet | _TBD_ |
+
 ## Build
 
 To build the project, run:
@@ -80,17 +91,6 @@ To enforce the cairo linter, please use:
 ```bash
 bash scripts/cairo_fmt.sh --fix
 ```
-
-## Deployments
-
-### Mock AMD TEE registry
-
-A mock implementation of `amd_tee_registry::IAMDTeeRegistry` (see [`src/input/mock_amd_tee_registry.cairo`](src/input/mock_amd_tee_registry.cairo)) is deployed for exercising Piltover's TEE settlement path without real AMD SEV-SNP attestations or SP1 Groth16 proofs:
-
-| Network | Contract address |
-| --- | --- |
-| Starknet Sepolia | [`0x037189b1807f1358074b70b3dc8ab79167bbf72cff1296286052f6dfe31c8f15`](https://sepolia.voyager.online/contract/0x037189b1807f1358074b70b3dc8ab79167bbf72cff1296286052f6dfe31c8f15) |
-| Starknet Mainnet | _TBD_ |
 
 ## Audits
 
