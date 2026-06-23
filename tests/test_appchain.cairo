@@ -13,8 +13,12 @@ use piltover::config::{
 };
 use piltover::fact_registry::IFactRegistryDispatcher;
 use piltover::input::snos_output::{StarknetOsOutput, deserialize_os_output};
-use piltover::interface::{IAppchainDispatcher, IAppchainDispatcherTrait};
+use piltover::interface::{
+    IAppchainDevDispatcher, IAppchainDevDispatcherTrait, IAppchainDispatcher,
+    IAppchainDispatcherTrait,
+};
 use piltover::messaging::{IMessagingDispatcher, IMessagingDispatcherTrait};
+use piltover::state::{IStateDispatcher, IStateDispatcherTrait};
 use snforge_std as snf;
 use snforge_std::{ContractClassTrait, EventSpy, EventSpyAssertionsTrait};
 use starknet::{ContractAddress, SyscallResultTrait};
@@ -474,4 +478,82 @@ fn update_state_lb_input_with_katana_tee_config_panics() {
         get_output(),
     );
     appchain.update_state(piltover_input);
+}
+
+// Tests for the owner-gated `reset_to_genesis` entrypoint.
+
+#[test]
+fn reset_to_genesis_restarts_nonce() {
+    let (appchain, _spy) = deploy_with_owner_and_state(
+        owner: c::OWNER, state_root: 0, block_number: 0, block_hash: 0,
+    );
+    let imsg = IMessagingDispatcher { contract_address: appchain.contract_address };
+
+    let to = c::RECIPIENT;
+    let selector = selector!("func1");
+    let payload = array![1, 2, 3];
+
+    // Two sends advance the nonce 0 -> 1.
+    snf::start_cheat_caller_address(appchain.contract_address, c::SPENDER);
+    let (_, nonce0) = imsg.send_message_to_appchain(to, selector, payload.span());
+    let (_, nonce1) = imsg.send_message_to_appchain(to, selector, payload.span());
+    assert(nonce0 == 0, 'expected nonce 0');
+    assert(nonce1 == 1, 'expected nonce 1');
+    snf::stop_cheat_caller_address(appchain.contract_address);
+
+    // Owner resets to genesis.
+    let idev = IAppchainDevDispatcher { contract_address: appchain.contract_address };
+    snf::start_cheat_caller_address(appchain.contract_address, c::OWNER);
+    idev.reset_to_genesis(0, 0, 0);
+    snf::stop_cheat_caller_address(appchain.contract_address);
+
+    // The next message restarts at nonce 0 - as if freshly deployed.
+    snf::start_cheat_caller_address(appchain.contract_address, c::SPENDER);
+    let (_, nonce_after) = imsg.send_message_to_appchain(to, selector, payload.span());
+    assert(nonce_after == 0, 'expected nonce reset to 0');
+}
+
+#[test]
+fn reset_to_genesis_reinitializes_state() {
+    let (appchain, _spy) = deploy_with_owner_and_state(
+        owner: c::OWNER, state_root: 0x111, block_number: 0x1, block_hash: 0x222,
+    );
+    let idev = IAppchainDevDispatcher { contract_address: appchain.contract_address };
+
+    snf::start_cheat_caller_address(appchain.contract_address, c::OWNER);
+    idev.reset_to_genesis('NEW_ROOT', 'NEW_BN', 'NEW_BH');
+    snf::stop_cheat_caller_address(appchain.contract_address);
+
+    let istate = IStateDispatcher { contract_address: appchain.contract_address };
+    let (root, block_number, block_hash) = istate.get_state();
+    assert(root == 'NEW_ROOT', 'wrong state root');
+    assert(block_number == 'NEW_BN', 'wrong block number');
+    assert(block_hash == 'NEW_BH', 'wrong block hash');
+}
+
+#[test]
+fn reset_to_genesis_emits_event() {
+    let (appchain, mut spy) = deploy_with_owner_and_state(
+        owner: c::OWNER, state_root: 0, block_number: 0, block_hash: 0,
+    );
+    let idev = IAppchainDevDispatcher { contract_address: appchain.contract_address };
+
+    snf::start_cheat_caller_address(appchain.contract_address, c::OWNER);
+    idev.reset_to_genesis('GENESIS_ROOT', 0, 'GENESIS_HASH');
+
+    let expected = piltover::appchain::appchain::ResetToGenesis {
+        state_root: 'GENESIS_ROOT', block_number: 0, block_hash: 'GENESIS_HASH',
+    };
+    spy.assert_emitted(@array![(appchain.contract_address, Event::ResetToGenesis(expected))]);
+}
+
+#[test]
+#[should_panic(expected: ('Caller is not the owner',))]
+fn reset_to_genesis_unauthorized() {
+    let (appchain, _spy) = deploy_with_owner_and_state(
+        owner: c::OWNER, state_root: 0, block_number: 0, block_hash: 0,
+    );
+    let idev = IAppchainDevDispatcher { contract_address: appchain.contract_address };
+    // No caller cheat -> caller defaults to a non-owner address -> panics.
+    idev.reset_to_genesis(0, 0, 0);
 }

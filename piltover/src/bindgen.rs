@@ -1026,6 +1026,62 @@ impl ProgramInfoChanged {
     }
 }
 #[derive()]
+pub struct ResetToGenesis {
+    pub state_root: starknet::core::types::Felt,
+    pub block_number: starknet::core::types::Felt,
+    pub block_hash: starknet::core::types::Felt,
+}
+impl cainome::cairo_serde::CairoSerde for ResetToGenesis {
+    type RustType = Self;
+    const SERIALIZED_SIZE: std::option::Option<usize> = None;
+    #[inline]
+    fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
+        let mut __size = 0;
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.state_root);
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.block_number);
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.block_hash);
+        __size
+    }
+    fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
+        let mut __out: Vec<starknet::core::types::Felt> = vec![];
+        __out.extend(starknet::core::types::Felt::cairo_serialize(
+            &__rust.state_root,
+        ));
+        __out.extend(starknet::core::types::Felt::cairo_serialize(
+            &__rust.block_number,
+        ));
+        __out.extend(starknet::core::types::Felt::cairo_serialize(
+            &__rust.block_hash,
+        ));
+        __out
+    }
+    fn cairo_deserialize(
+        __felts: &[starknet::core::types::Felt],
+        __offset: usize,
+    ) -> cainome::cairo_serde::Result<Self::RustType> {
+        let mut __offset = __offset;
+        let state_root = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&state_root);
+        let block_number = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&block_number);
+        let block_hash = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&block_hash);
+        Ok(ResetToGenesis {
+            state_root,
+            block_number,
+            block_hash,
+        })
+    }
+}
+impl ResetToGenesis {
+    pub fn event_selector() -> starknet::core::types::Felt {
+        starknet::core::utils::get_selector_from_name("ResetToGenesis").unwrap()
+    }
+    pub fn event_name() -> &'static str {
+        "ResetToGenesis"
+    }
+}
+#[derive()]
 pub struct StarknetOsProgramInfo {
     pub bootloader_program_hash: starknet::core::types::Felt,
     pub snos_config_hash: starknet::core::types::Felt,
@@ -1259,6 +1315,7 @@ pub enum AppchainEvent {
     LogStateUpdate(LogStateUpdate),
     LogStateUpdateWithDa(LogStateUpdateWithDa),
     LogStateTransitionFact(LogStateTransitionFact),
+    ResetToGenesis(ResetToGenesis),
 }
 impl cainome::cairo_serde::CairoSerde for AppchainEvent {
     type RustType = Self;
@@ -1283,6 +1340,7 @@ impl cainome::cairo_serde::CairoSerde for AppchainEvent {
             AppchainEvent::LogStateTransitionFact(val) => {
                 LogStateTransitionFact::cairo_serialized_size(val) + 1
             }
+            AppchainEvent::ResetToGenesis(val) => ResetToGenesis::cairo_serialized_size(val) + 1,
             _ => 0,
         }
     }
@@ -1342,6 +1400,12 @@ impl cainome::cairo_serde::CairoSerde for AppchainEvent {
                 temp.extend(LogStateTransitionFact::cairo_serialize(val));
                 temp
             }
+            AppchainEvent::ResetToGenesis(val) => {
+                let mut temp = vec![];
+                temp.extend(usize::cairo_serialize(&9usize));
+                temp.extend(ResetToGenesis::cairo_serialize(val));
+                temp
+            }
             _ => vec![],
         }
     }
@@ -1380,6 +1444,9 @@ impl cainome::cairo_serde::CairoSerde for AppchainEvent {
             )),
             8usize => Ok(AppchainEvent::LogStateTransitionFact(
                 LogStateTransitionFact::cairo_deserialize(__felts, __offset + 1)?,
+            )),
+            9usize => Ok(AppchainEvent::ResetToGenesis(
+                ResetToGenesis::cairo_deserialize(__felts, __offset + 1)?,
             )),
             _ => {
                 return Err(cainome::cairo_serde::Error::Deserialize(format!(
@@ -2197,6 +2264,52 @@ impl TryFrom<&starknet::core::types::EmittedEvent> for AppchainEvent {
                 },
             ));
         };
+        let selector = event.keys[0];
+        if selector
+            == starknet::core::utils::get_selector_from_name("ResetToGenesis")
+                .unwrap_or_else(|_| panic!("Invalid selector for {}", "ResetToGenesis"))
+        {
+            let mut key_offset = 0 + 1;
+            let mut data_offset = 0;
+            let state_root =
+                match starknet::core::types::Felt::cairo_deserialize(&event.data, data_offset) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return Err(format!(
+                            "Could not deserialize field {} for {}: {:?}",
+                            "state_root", "ResetToGenesis", e
+                        ))
+                    }
+                };
+            data_offset += starknet::core::types::Felt::cairo_serialized_size(&state_root);
+            let block_number =
+                match starknet::core::types::Felt::cairo_deserialize(&event.data, data_offset) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return Err(format!(
+                            "Could not deserialize field {} for {}: {:?}",
+                            "block_number", "ResetToGenesis", e
+                        ))
+                    }
+                };
+            data_offset += starknet::core::types::Felt::cairo_serialized_size(&block_number);
+            let block_hash =
+                match starknet::core::types::Felt::cairo_deserialize(&event.data, data_offset) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return Err(format!(
+                            "Could not deserialize field {} for {}: {:?}",
+                            "block_hash", "ResetToGenesis", e
+                        ))
+                    }
+                };
+            data_offset += starknet::core::types::Felt::cairo_serialized_size(&block_hash);
+            return Ok(AppchainEvent::ResetToGenesis(ResetToGenesis {
+                state_root,
+                block_number,
+                block_hash,
+            }));
+        };
         Err(format!(
             "Could not match any event from keys {:?}",
             event.keys
@@ -3009,6 +3122,52 @@ impl TryFrom<&starknet::core::types::Event> for AppchainEvent {
                     state_transition_fact,
                 },
             ));
+        };
+        let selector = event.keys[0];
+        if selector
+            == starknet::core::utils::get_selector_from_name("ResetToGenesis")
+                .unwrap_or_else(|_| panic!("Invalid selector for {}", "ResetToGenesis"))
+        {
+            let mut key_offset = 0 + 1;
+            let mut data_offset = 0;
+            let state_root =
+                match starknet::core::types::Felt::cairo_deserialize(&event.data, data_offset) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return Err(format!(
+                            "Could not deserialize field {} for {}: {:?}",
+                            "state_root", "ResetToGenesis", e
+                        ))
+                    }
+                };
+            data_offset += starknet::core::types::Felt::cairo_serialized_size(&state_root);
+            let block_number =
+                match starknet::core::types::Felt::cairo_deserialize(&event.data, data_offset) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return Err(format!(
+                            "Could not deserialize field {} for {}: {:?}",
+                            "block_number", "ResetToGenesis", e
+                        ))
+                    }
+                };
+            data_offset += starknet::core::types::Felt::cairo_serialized_size(&block_number);
+            let block_hash =
+                match starknet::core::types::Felt::cairo_deserialize(&event.data, data_offset) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return Err(format!(
+                            "Could not deserialize field {} for {}: {:?}",
+                            "block_hash", "ResetToGenesis", e
+                        ))
+                    }
+                };
+            data_offset += starknet::core::types::Felt::cairo_serialized_size(&block_hash);
+            return Ok(AppchainEvent::ResetToGenesis(ResetToGenesis {
+                state_root,
+                block_number,
+                block_hash,
+            }));
         };
         Err(format!(
             "Could not match any event from keys {:?}",
@@ -5310,6 +5469,45 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> AppchainContract<A> {
         let __call = starknet::core::types::Call {
             to: self.address,
             selector: starknet::macros::selector!("renounce_ownership"),
+            calldata: __calldata,
+        };
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn reset_to_genesis_getcall(
+        &self,
+        state_root: &starknet::core::types::Felt,
+        block_number: &starknet::core::types::Felt,
+        block_hash: &starknet::core::types::Felt,
+    ) -> starknet::core::types::Call {
+        use cainome::cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(state_root));
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(block_number));
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(block_hash));
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("reset_to_genesis"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn reset_to_genesis(
+        &self,
+        state_root: &starknet::core::types::Felt,
+        block_number: &starknet::core::types::Felt,
+        block_hash: &starknet::core::types::Felt,
+    ) -> starknet::accounts::ExecutionV3<A> {
+        use cainome::cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(state_root));
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(block_number));
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(block_hash));
+        let __call = starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("reset_to_genesis"),
             calldata: __calldata,
         };
         self.account.execute_v3(vec![__call])

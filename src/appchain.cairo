@@ -19,7 +19,7 @@ pub mod appchain {
     };
     use piltover::config::config_cpt::InternalTrait as ConfigInternal;
     use piltover::config::{IConfig, config_cpt};
-    use piltover::interface::IAppchain;
+    use piltover::interface::{IAppchain, IAppchainDev};
     use piltover::messaging::messaging_cpt;
     use piltover::messaging::messaging_cpt::InternalTrait as MessagingInternal;
     use piltover::state::state_cpt::InternalTrait as StateInternal;
@@ -90,6 +90,7 @@ pub mod appchain {
         LogStateUpdate: LogStateUpdate,
         LogStateUpdateWithDa: LogStateUpdateWithDa,
         LogStateTransitionFact: LogStateTransitionFact,
+        ResetToGenesis: ResetToGenesis,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -112,6 +113,14 @@ pub mod appchain {
     #[derive(Drop, starknet::Event)]
     pub struct LogStateTransitionFact {
         pub state_transition_fact: u256,
+    }
+
+    /// Emitted when the contract is reset to a fresh genesis via `reset_to_genesis`.
+    #[derive(Drop, starknet::Event)]
+    pub struct ResetToGenesis {
+        pub state_root: felt252,
+        pub block_number: felt252,
+        pub block_hash: felt252,
     }
 
     /// Initializes the contract.
@@ -217,6 +226,21 @@ pub mod appchain {
         fn upgrade(ref self: ContractState, new_class_hash: ClassHash) {
             self.ownable.assert_only_owner();
             self.upgradeable.upgrade(new_class_hash);
+        }
+    }
+
+    #[abi(embed_v0)]
+    impl AppchainDevImpl of IAppchainDev<ContractState> {
+        fn reset_to_genesis(
+            ref self: ContractState,
+            state_root: felt252,
+            block_number: felt252,
+            block_hash: felt252,
+        ) {
+            self.ownable.assert_only_owner();
+            self.state.initialize(state_root, block_number, block_hash);
+            self.messaging.reset_nonce();
+            self.emit(ResetToGenesis { state_root, block_number, block_hash });
         }
     }
 }
