@@ -1,47 +1,17 @@
 use bool::False;
-use piltover::snos_output::{StarknetOsOutput, deserialize_os_output};
+use piltover::input::snos_output::{StarknetOsOutput, deserialize_os_output};
 
 pub const HEADER_SIZE: usize = 8;
 
 #[derive(Drop, Serde, Debug)]
-pub enum PiltoverInput {
-    LayoutBridgeOutputNoDa: Span<felt252>,
-    LayoutBridgeOutputWithDa: (Span<felt252>, DaLayerInfo),
+pub struct StateUpdateInput {
+    pub prev_state_root: felt252,
+    pub state_root: felt252,
+    pub prev_block_number: felt252,
+    pub block_number: felt252,
+    pub prev_block_hash: felt252,
+    pub block_hash: felt252,
 }
-
-pub trait PiltoverInputTrait {
-    fn get_layout_bridge_output(self: @PiltoverInput) -> LayoutBridgeOutput;
-    fn get_raw_output(
-        self: @PiltoverInput,
-    ) -> Span<
-        felt252,
-    > {
-        match self {
-            PiltoverInput::LayoutBridgeOutputNoDa(lb_output) => *lb_output,
-            PiltoverInput::LayoutBridgeOutputWithDa((lb_output, _)) => *lb_output,
-        }
-    }
-}
-
-impl PiltoverInputImpl of PiltoverInputTrait {
-    fn get_layout_bridge_output(self: @PiltoverInput) -> LayoutBridgeOutput {
-        match self {
-            PiltoverInput::LayoutBridgeOutputNoDa(lb_output) => deserialize_layout_bridge_output(
-                *lb_output,
-            ),
-            PiltoverInput::LayoutBridgeOutputWithDa((
-                lb_output, _,
-            )) => deserialize_layout_bridge_output(*lb_output),
-        }
-    }
-    fn get_raw_output(self: @PiltoverInput) -> Span<felt252> {
-        match self {
-            PiltoverInput::LayoutBridgeOutputNoDa(lb_output) => *lb_output,
-            PiltoverInput::LayoutBridgeOutputWithDa((lb_output, _)) => *lb_output,
-        }
-    }
-}
-
 
 #[derive(Drop, Serde, Debug)]
 pub struct DaLayerInfo {
@@ -59,7 +29,6 @@ pub struct LayoutBridgeOutput {
     pub snos_output_length: felt252,
     pub bootloader_output: SnosBootloaderOutput,
 }
-
 
 #[derive(Drop, Serde, Debug)]
 pub struct SnosBootloaderOutput {

@@ -2,6 +2,11 @@
 version = 1
 
 [[package]]
+name = "amd_tee_registry"
+version = "0.1.0"
+source = "git+https://github.com/cartridge-gg/katana-tee?rev=56aa752d2e73e505c356c80b7a00eddd27d4d263#56aa752d2e73e505c356c80b7a00eddd27d4d263"
+
+[[package]]
 name = "integrity"
 version = "2.1.0"
 source = "registry+https://scarbs.xyz/"
@@ -129,6 +134,7 @@ checksum = "sha256:44f32d242af1e43982decc49c563e613a9b67ade552f5c3d5cde504e92f74
 name = "piltover"
 version = "0.1.0"
 dependencies = [
+ "amd_tee_registry",
  "integrity",
  "openzeppelin",
  "snforge_std",

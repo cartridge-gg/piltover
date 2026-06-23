@@ -3,19 +3,18 @@
 //! Interface for appchain settlement contract configuration.
 use starknet::ContractAddress;
 
-/// Information of the program verified onchain to apply the state transition.
+/// Program info for validity-proof (StarknetOS + Layout Bridge) settlement.
 ///
-/// In the current design, the StarknetOS (SNOS) is executed and proven first.
-/// Since the layout used by SNOS is not verifiable onchain, a bridge layout
-/// program is also executed on the proof generated from SNOS execution.
+/// The StarknetOS (SNOS) is executed and proven first. Since the layout used by
+/// SNOS is not verifiable onchain, a bridge layout program is also executed on
+/// the proof generated from SNOS execution. Since the Layout Bridge program is
+/// bootloaded, the bootloader program hash is also included, as the fact
+/// registered in the facts registry is computed from the Layout Bridge program
+/// hash and its output.
 ///
-/// Since the Layout Bridge program is bootloaded, the bootloader program hash
-/// is also included in the program info, as the fact registered in the
-/// facts registry is computed from the Layout Bridge program hash and its output.
-///
-/// This ensures that the correct programs have been executed.
+/// The four hashes together pin the SNOS execution environment.
 #[derive(starknet::Store, Drop, Serde, Copy, PartialEq)]
-pub struct ProgramInfo {
+pub struct StarknetOsProgramInfo {
     /// The hash of the bootloader program that bootloads the Layout Bridge program.
     pub bootloader_program_hash: felt252,
     /// The hash of the SNOS config:
@@ -25,6 +24,37 @@ pub struct ProgramInfo {
     pub snos_program_hash: felt252,
     /// The hash of the Layout Bridge program.
     pub layout_bridge_program_hash: felt252,
+}
+
+/// Program info for Katana TEE settlement.
+///
+/// In TEE mode, the appchain is identified entirely by a single versioned
+/// environment config hash bound into the SEV-SNP `report_data`. Program hashes
+/// are irrelevant; the TEE attestation pins the off-chain Katana node, not a
+/// Cairo program.
+#[derive(starknet::Store, Drop, Serde, Copy, PartialEq)]
+pub struct KatanaTeeProgramInfo {
+    /// Versioned environment config hash bound into v1 TEE attestations.
+    /// Computed off-chain by the Katana node:
+    /// `pedersen_array([KatanaTeeConfig1, chain_id, fee_token_address])`.
+    /// The on-chain side stores it and compares against the attested value;
+    /// it does not recompute.
+    pub katana_tee_config_hash: felt252,
+}
+
+/// Information of the program verified onchain to apply the state transition.
+///
+/// Each Piltover deployment commits to one settlement mode at config time. The
+/// `PiltoverInput` variant submitted to `update_state` must agree with the
+/// active `ProgramInfo` variant or the call panics.
+#[derive(starknet::Store, Drop, Serde, Copy, PartialEq)]
+pub enum ProgramInfo {
+    /// Default variant: an all-zero `StarknetOsProgramInfo` is what fresh storage
+    /// returns before `set_program_info` is called. This preserves the original
+    /// semantics from when `ProgramInfo` was a single struct of zeroed felts.
+    #[default]
+    StarknetOs: StarknetOsProgramInfo,
+    KatanaTee: KatanaTeeProgramInfo,
 }
 
 #[starknet::interface]

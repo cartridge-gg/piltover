@@ -31,6 +31,8 @@ pub mod config_cpt {
         /// Appchain operators that are allowed to update the state.
         pub operators: Map<ContractAddress, bool>,
         /// The information of the program verified to apply the state transition.
+        /// Also carries the chain id and STRK fee token address that feed the v1
+        /// Katana TEE config hash.
         pub program_info: ProgramInfo,
         /// Facts registry contract address.
         pub facts_registry: ContractAddress,

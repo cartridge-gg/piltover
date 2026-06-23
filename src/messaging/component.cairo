@@ -43,6 +43,7 @@ mod errors {
 #[starknet::component]
 pub mod messaging_cpt {
     use core::num::traits::Zero;
+    use piltover::input::snos_output::{MessageToAppchain, MessageToStarknet};
     #[cfg(feature: 'messaging_test')]
     use piltover::messaging::IMessagingTest;
     use piltover::messaging::hash;
@@ -50,7 +51,6 @@ pub mod messaging_cpt {
     use piltover::messaging::types::{
         MessageHash, MessageToAppchainStatus, MessageToStarknetStatus, Nonce,
     };
-    use piltover::snos_output::{MessageToAppchain, MessageToStarknet};
     use starknet::ContractAddress;
     use starknet::storage::{
         Map, StorageMapReadAccess, StorageMapWriteAccess, StoragePointerReadAccess,
@@ -354,6 +354,16 @@ pub mod messaging_cpt {
         /// * `cancellation_delay_secs` - The delay in seconds for message cancellation window.
         fn initialize(ref self: ComponentState<TContractState>, cancellation_delay_secs: u64) {
             self.cancellation_delay_secs.write(cancellation_delay_secs);
+        }
+
+        /// Resets the Starknet -> Appchain message nonce back to genesis (0).
+        ///
+        /// Used by `reset_to_genesis` to make a reset appchain look freshly deployed, so
+        /// that a wiped sequencer (which expects the first L1 handler nonce to be 0) can
+        /// resume L1 -> L2 messaging without redeploying this contract. The only external
+        /// caller is the owner-gated `reset_to_genesis` entrypoint.
+        fn reset_nonce(ref self: ComponentState<TContractState>) {
+            self.sn_to_appc_nonce.write(0);
         }
 
         /// Processes the messages to Starknet from StarknetOS output.

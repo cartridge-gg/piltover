@@ -13,7 +13,7 @@ mod errors {
 /// State component.
 #[starknet::component]
 pub mod state_cpt {
-    use piltover::snos_output::StarknetOsOutput;
+    use piltover::input::layout_bridge::StateUpdateInput;
     use piltover::state::interface::{IState, IStateUpdater};
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use super::errors;
@@ -46,14 +46,13 @@ pub mod state_cpt {
     impl StateUpdater<
         TContractState, +HasComponent<TContractState>,
     > of IStateUpdater<ComponentState<TContractState>> {
-        fn update(ref self: ComponentState<TContractState>, program_output: StarknetOsOutput) {
+        fn update(ref self: ComponentState<TContractState>, input: StateUpdateInput) {
             assert(
-                self.block_number.read() == program_output.prev_block_number,
-                errors::INVALID_BLOCK_NUMBER,
+                self.block_number.read() == input.prev_block_number, errors::INVALID_BLOCK_NUMBER,
             );
 
             assert(
-                self.block_hash.read() == program_output.prev_block_hash,
+                self.block_hash.read() == input.prev_block_hash,
                 errors::INVALID_PREVIOUS_BLOCK_HASH,
             );
 
@@ -61,7 +60,7 @@ pub mod state_cpt {
             // the new block number is greater than the current block number for a valid state
             // transition.
             let block_number_u256: u256 = self.block_number.read().into();
-            let new_block_number_u256: u256 = program_output.new_block_number.into();
+            let new_block_number_u256: u256 = input.block_number.into();
             let max_felt = 0x800000000000011000000000000000000000000000000000000000000000000;
 
             // For the first block, the contract is initialized with a genesis state, which
@@ -78,15 +77,12 @@ pub mod state_cpt {
                 assert(new_block_number_u256 > block_number_u256, errors::INVALID_BLOCK_NUMBER);
             }
 
-            self.block_number.write(program_output.new_block_number);
-            self.block_hash.write(program_output.new_block_hash);
+            self.block_number.write(input.block_number);
+            self.block_hash.write(input.block_hash);
 
-            assert(
-                self.state_root.read() == program_output.initial_root,
-                errors::INVALID_PREVIOUS_ROOT,
-            );
+            assert(self.state_root.read() == input.prev_state_root, errors::INVALID_PREVIOUS_ROOT);
 
-            self.state_root.write(program_output.final_root);
+            self.state_root.write(input.state_root);
         }
     }
 
