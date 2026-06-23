@@ -356,6 +356,16 @@ pub mod messaging_cpt {
             self.cancellation_delay_secs.write(cancellation_delay_secs);
         }
 
+        /// Resets the Starknet -> Appchain message nonce back to genesis (0).
+        ///
+        /// Used by `reset_to_genesis` to make a reset appchain look freshly deployed, so
+        /// that a wiped sequencer (which expects the first L1 handler nonce to be 0) can
+        /// resume L1 -> L2 messaging without redeploying this contract. The only external
+        /// caller is the owner-gated `reset_to_genesis` entrypoint.
+        fn reset_nonce(ref self: ComponentState<TContractState>) {
+            self.sn_to_appc_nonce.write(0);
+        }
+
         /// Processes the messages to Starknet from StarknetOS output.
         /// Once processed, messages are ready to be consumed using
         /// `consume_message_from_appchain` entry point.
