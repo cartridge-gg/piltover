@@ -4,7 +4,7 @@ version = 1
 [[package]]
 name = "amd_tee_registry"
 version = "0.1.0"
-source = "git+https://github.com/cartridge-gg/katana-tee?rev=56aa752d2e73e505c356c80b7a00eddd27d4d263#56aa752d2e73e505c356c80b7a00eddd27d4d263"
+source = "git+https://github.com/cartridge-gg/katana-tee?tag=v0.1.0#6a263b017aa37903b8d65cf28c9f52cd24cb5807"
 
 [[package]]
 name = "integrity"
